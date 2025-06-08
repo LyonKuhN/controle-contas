@@ -15,7 +15,8 @@ const menuItems = [
     description: "Registre e categorize todos os seus gastos mensais",
     icon: "💸",
     path: "/despesas",
-    gradient: true
+    gradient: false,
+    hoverGradient: true
   },
   {
     title: "Receitas",
@@ -25,10 +26,10 @@ const menuItems = [
     gradient: false
   },
   {
-    title: "Contas Fixas",
-    description: "Gerencie suas contas mensais recorrentes",
+    title: "Controle de Contas",
+    description: "Gerencie suas contas e acompanhe pagamentos",
     icon: "📋",
-    path: "/contas-fixas",
+    path: "/controle-contas",
     gradient: false
   }
 ];
@@ -56,6 +57,8 @@ const MainMenu = () => {
                   p-8 h-80 flex flex-col justify-between card-hover cursor-pointer
                   ${item.gradient 
                     ? 'bg-gradient-primary text-white border-none' 
+                    : item.hoverGradient
+                    ? 'bg-card hover:bg-gradient-primary border-border transition-all duration-500 hover:text-white hover:border-none'
                     : 'bg-card hover:bg-card/80 border-border'
                   }
                 `}
@@ -66,15 +69,15 @@ const MainMenu = () => {
                 <div className="space-y-4">
                   <div className="text-4xl mb-4">{item.icon}</div>
                   <h3 className="text-2xl font-bold">{item.title}</h3>
-                  <p className={`text-sm leading-relaxed ${
-                    item.gradient ? 'text-white/80' : 'text-muted-foreground'
+                  <p className={`text-sm leading-relaxed transition-colors duration-500 ${
+                    item.gradient ? 'text-white/80' : 'text-muted-foreground group-hover:text-white/80'
                   }`}>
                     {item.description}
                   </p>
                 </div>
                 <div className="mt-8">
-                  <span className={`text-sm font-medium ${
-                    item.gradient ? 'text-white' : 'text-primary'
+                  <span className={`text-sm font-medium transition-colors duration-500 ${
+                    item.gradient ? 'text-white' : 'text-primary group-hover:text-white'
                   }`}>
                     Explorar →
                   </span>

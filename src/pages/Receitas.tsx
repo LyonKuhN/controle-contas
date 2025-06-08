@@ -2,6 +2,8 @@
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
+import CadastroReceitas from "@/components/receitas/CadastroReceitas";
+import ListaReceitas from "@/components/receitas/ListaReceitas";
 
 const Receitas = () => {
   return (
@@ -14,13 +16,13 @@ const Receitas = () => {
           <h1 className="text-4xl font-bold text-foreground">Receitas</h1>
         </div>
         
-        <Card className="p-8 text-center">
-          <div className="text-6xl mb-4">💰</div>
-          <h2 className="text-2xl font-bold mb-4">Controle de Receitas</h2>
-          <p className="text-muted-foreground">
-            Controle todas as suas fontes de renda
-          </p>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Formulário de Cadastro */}
+          <CadastroReceitas />
+          
+          {/* Lista de Receitas */}
+          <ListaReceitas />
+        </div>
       </div>
     </div>
   );

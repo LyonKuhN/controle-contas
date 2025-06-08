@@ -8,7 +8,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import Despesas from "./pages/Despesas";
 import Receitas from "./pages/Receitas";
-import ContasFixas from "./pages/ContasFixas";
+import ControleContas from "./pages/ControleContas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,7 +24,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/despesas" element={<Despesas />} />
           <Route path="/receitas" element={<Receitas />} />
-          <Route path="/contas-fixas" element={<ContasFixas />} />
+          <Route path="/controle-contas" element={<ControleContas />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

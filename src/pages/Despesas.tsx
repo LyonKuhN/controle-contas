@@ -2,6 +2,8 @@
 import { ArrowLeft } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
+import CadastroDespesas from "@/components/despesas/CadastroDespesas";
+import ListaDespesas from "@/components/despesas/ListaDespesas";
 
 const Despesas = () => {
   return (
@@ -14,13 +16,13 @@ const Despesas = () => {
           <h1 className="text-4xl font-bold text-foreground">Despesas</h1>
         </div>
         
-        <Card className="p-8 text-center">
-          <div className="text-6xl mb-4">💸</div>
-          <h2 className="text-2xl font-bold mb-4">Controle de Despesas</h2>
-          <p className="text-muted-foreground">
-            Registre e categorize todos os seus gastos mensais
-          </p>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Formulário de Cadastro */}
+          <CadastroDespesas />
+          
+          {/* Lista de Despesas */}
+          <ListaDespesas />
+        </div>
       </div>
     </div>
   );
