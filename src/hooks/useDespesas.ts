@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -172,21 +173,24 @@ export const useDespesas = () => {
       // Gerar apenas as despesas que ainda não existem
       const promises = despesasParaGerar.map(async (modelo) => {
         // Extrair o dia da data de vencimento da despesa modelo
-        const dataModeloOriginal = new Date(modelo.data_vencimento);
+        const dataModeloOriginal = new Date(modelo.data_vencimento + 'T12:00:00'); // Adicionar horário para evitar problemas de timezone
         const diaVencimento = dataModeloOriginal.getDate();
         
-        // Criar nova data para o mês/ano selecionado mantendo o dia original
-        const novaData = new Date(targetDate.getFullYear(), targetDate.getMonth(), diaVencimento);
+        console.log(`Modelo original: ${modelo.data_vencimento}, Dia extraído: ${diaVencimento}`);
         
-        // Se o dia não existe no mês (ex: 31 de fevereiro), ajustar para o último dia do mês
-        if (novaData.getMonth() !== targetDate.getMonth()) {
-          novaData.setDate(0); // Vai para o último dia do mês anterior
-        }
+        // Criar nova data para o mês/ano selecionado mantendo o dia original
+        // Usar formatação manual para evitar problemas de timezone
+        const ano = targetDate.getFullYear();
+        const mes = targetDate.getMonth() + 1; // getMonth() retorna 0-11, precisamos 1-12
+        
+        // Verificar se o dia existe no mês (ex: 31 de fevereiro)
+        const ultimoDiaDoMes = new Date(ano, mes, 0).getDate();
+        const diaFinal = Math.min(diaVencimento, ultimoDiaDoMes);
+        
+        // Formatar a data manualmente para garantir que está correta
+        const dataVencimentoFormatada = `${ano}-${String(mes).padStart(2, '0')}-${String(diaFinal).padStart(2, '0')}`;
 
-        // Formatar a data corretamente para evitar problemas de fuso horário
-        const dataVencimentoFormatada = `${novaData.getFullYear()}-${String(novaData.getMonth() + 1).padStart(2, '0')}-${String(novaData.getDate()).padStart(2, '0')}`;
-
-        console.log(`Criando despesa ${modelo.descricao} para ${dataVencimentoFormatada}`);
+        console.log(`Criando despesa ${modelo.descricao} para ${dataVencimentoFormatada} (dia original: ${diaVencimento}, dia final: ${diaFinal})`);
 
         const { data, error } = await supabase
           .from('despesas')
