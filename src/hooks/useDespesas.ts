@@ -69,13 +69,21 @@ export const useDespesas = () => {
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['despesas'] });
       
-      // Only show toast for single expenses or the last installment
-      if (!variables.parcela_atual || variables.parcela_atual === variables.numero_parcelas) {
+      // Personalizar mensagem de sucesso baseada no tipo
+      if (variables.tipo === 'fixa') {
         toast({
           title: "Sucesso",
-          description: variables.numero_parcelas 
-            ? `Despesa parcelada cadastrada com ${variables.numero_parcelas} parcelas!`
-            : "Despesa cadastrada com sucesso!"
+          description: "Despesa fixa cadastrada para os próximos 12 meses!"
+        });
+      } else if (variables.numero_parcelas && variables.parcela_atual === variables.numero_parcelas) {
+        toast({
+          title: "Sucesso",
+          description: `Despesa parcelada cadastrada com ${variables.numero_parcelas} parcelas!`
+        });
+      } else if (!variables.parcela_atual) {
+        toast({
+          title: "Sucesso",
+          description: "Despesa cadastrada com sucesso!"
         });
       }
     },

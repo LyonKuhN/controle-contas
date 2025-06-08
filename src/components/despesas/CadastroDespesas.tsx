@@ -67,12 +67,37 @@ const CadastroDespesas = () => {
     return targetDate.toISOString().split('T')[0];
   };
 
+  // Função para gerar despesas fixas para os próximos 12 meses
+  const createDespesasFixas = async (despesaBase: any, diaVencimento: number) => {
+    const promises = [];
+    
+    for (let i = 0; i < 12; i++) {
+      const today = new Date();
+      const targetDate = new Date(today.getFullYear(), today.getMonth() + i, diaVencimento);
+      
+      // Se o dia não existe no mês (ex: 31 de fevereiro), ajustar para o último dia do mês
+      if (targetDate.getMonth() !== (today.getMonth() + i) % 12) {
+        targetDate.setDate(0); // Vai para o último dia do mês anterior
+      }
+      
+      const despesaFixa = {
+        ...despesaBase,
+        data_vencimento: targetDate.toISOString().split('T')[0]
+      };
+      
+      promises.push(createDespesa.mutateAsync(despesaFixa));
+    }
+    
+    return Promise.all(promises);
+  };
+
   const createParcelasDespesa = async (despesaBase: any, numeroParcelas: number, dataInicial: string) => {
     const promises = [];
     
     for (let i = 0; i < numeroParcelas; i++) {
-      const dataVencimento = new Date(dataInicial);
-      dataVencimento.setMonth(dataVencimento.getMonth() + i);
+      // Criar data sem problemas de timezone
+      const [year, month, day] = dataInicial.split('-').map(Number);
+      const dataVencimento = new Date(year, month - 1 + i, day);
       
       const despesaParcela = {
         ...despesaBase,
@@ -110,11 +135,6 @@ const CadastroDespesas = () => {
     let valorTotal = valorFinal;
     let dataVencimento = formData.data_vencimento;
 
-    // Para despesas fixas, gerar a próxima data de vencimento baseada no dia
-    if (formData.tipo === 'fixa') {
-      dataVencimento = generateDateForFixedExpense(parseInt(formData.dia_vencimento));
-    }
-
     // Calcular valores para despesas parceladas
     if (formData.tipo === 'parcelada') {
       const numeroParcelas = parseInt(formData.numero_parcelas);
@@ -138,11 +158,14 @@ const CadastroDespesas = () => {
     };
 
     try {
-      if (formData.tipo === 'parcelada') {
+      if (formData.tipo === 'fixa') {
+        // Criar despesas fixas para os próximos 12 meses
+        await createDespesasFixas(despesaBase, parseInt(formData.dia_vencimento));
+      } else if (formData.tipo === 'parcelada') {
         // Criar todas as parcelas automaticamente
         await createParcelasDespesa(despesaBase, parseInt(formData.numero_parcelas), dataVencimento);
       } else {
-        // Criar despesa única
+        // Criar despesa única (variável)
         await createDespesa.mutateAsync({
           ...despesaBase,
           data_vencimento: dataVencimento,
@@ -234,7 +257,7 @@ const CadastroDespesas = () => {
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground mt-1">
-              Esta despesa se repetirá mensalmente no dia {formData.dia_vencimento || 'X'}
+              Esta despesa será criada para os próximos 12 meses, no dia {formData.dia_vencimento || 'X'} de cada mês
             </p>
           </div>
         )}
