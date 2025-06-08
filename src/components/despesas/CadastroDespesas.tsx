@@ -15,11 +15,12 @@ const CadastroDespesas = () => {
     valor: '',
     categoria_id: '',
     data_vencimento: '',
+    dia_vencimento: '', // Para despesas fixas
     tipo: 'variavel' as 'fixa' | 'variavel' | 'parcelada',
     observacoes: '',
     numero_parcelas: '',
     valor_total: '',
-    tipo_valor: 'total' as 'total' | 'parcela' // total = valor informado é o total, parcela = valor informado é por parcela
+    tipo_valor: 'total' as 'total' | 'parcela'
   });
 
   const { createDespesa } = useDespesas();
@@ -36,34 +37,71 @@ const CadastroDespesas = () => {
       // Reset parcela fields when changing type
       numero_parcelas: value !== 'parcelada' ? '' : prev.numero_parcelas,
       valor_total: value !== 'parcelada' ? '' : prev.valor_total,
-      tipo_valor: 'total'
+      tipo_valor: 'total',
+      // Reset date fields when changing type
+      data_vencimento: value === 'fixa' ? '' : prev.data_vencimento,
+      dia_vencimento: value !== 'fixa' ? '' : prev.dia_vencimento
     }));
+  };
+
+  const generateDateForFixedExpense = (day: number) => {
+    const today = new Date();
+    const currentMonth = today.getMonth();
+    const currentYear = today.getFullYear();
+    const currentDay = today.getDate();
+    
+    // Se o dia já passou neste mês, agendar para o próximo mês
+    let targetMonth = currentMonth;
+    let targetYear = currentYear;
+    
+    if (day < currentDay) {
+      targetMonth++;
+      if (targetMonth > 11) {
+        targetMonth = 0;
+        targetYear++;
+      }
+    }
+    
+    const targetDate = new Date(targetYear, targetMonth, day);
+    return targetDate.toISOString().split('T')[0];
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.descricao || !formData.valor || !formData.categoria_id || !formData.data_vencimento) {
+    if (!formData.descricao || !formData.valor || !formData.categoria_id) {
       return;
     }
 
-    // Validação específica para despesas parceladas
+    // Validação específica por tipo
+    if (formData.tipo === 'fixa' && !formData.dia_vencimento) {
+      return;
+    }
+    
+    if (formData.tipo !== 'fixa' && !formData.data_vencimento) {
+      return;
+    }
+
     if (formData.tipo === 'parcelada' && !formData.numero_parcelas) {
       return;
     }
 
     let valorFinal = parseFloat(formData.valor);
     let valorTotal = valorFinal;
+    let dataVencimento = formData.data_vencimento;
+
+    // Para despesas fixas, gerar a próxima data de vencimento baseada no dia
+    if (formData.tipo === 'fixa') {
+      dataVencimento = generateDateForFixedExpense(parseInt(formData.dia_vencimento));
+    }
 
     // Calcular valores para despesas parceladas
     if (formData.tipo === 'parcelada') {
       const numeroParcelas = parseInt(formData.numero_parcelas);
       
       if (formData.tipo_valor === 'total') {
-        // Se o valor informado é o total, dividir pelas parcelas
         valorFinal = valorTotal / numeroParcelas;
       } else {
-        // Se o valor informado é por parcela, multiplicar pelo número de parcelas
         valorTotal = valorFinal * numeroParcelas;
       }
     }
@@ -72,7 +110,7 @@ const CadastroDespesas = () => {
       descricao: formData.descricao,
       valor: valorFinal,
       categoria_id: formData.categoria_id,
-      data_vencimento: formData.data_vencimento,
+      data_vencimento: dataVencimento,
       tipo: formData.tipo,
       pago: false,
       observacoes: formData.observacoes || undefined,
@@ -87,6 +125,7 @@ const CadastroDespesas = () => {
       valor: '',
       categoria_id: '',
       data_vencimento: '',
+      dia_vencimento: '',
       tipo: 'variavel',
       observacoes: '',
       numero_parcelas: '',
@@ -134,12 +173,34 @@ const CadastroDespesas = () => {
               <SelectValue placeholder="Selecione o tipo" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="fixa">🔒 Fixa</SelectItem>
+              <SelectItem value="fixa">🔒 Fixa (mensal)</SelectItem>
               <SelectItem value="variavel">🔄 Variável</SelectItem>
               <SelectItem value="parcelada">📅 Parcelada</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
+        {/* Campo de dia de vencimento para despesas fixas */}
+        {formData.tipo === 'fixa' && (
+          <div>
+            <Label htmlFor="dia_vencimento">Dia do Vencimento *</Label>
+            <Select value={formData.dia_vencimento} onValueChange={(value) => handleInputChange('dia_vencimento', value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o dia do mês" />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((dia) => (
+                  <SelectItem key={dia} value={dia.toString()}>
+                    Dia {dia}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground mt-1">
+              Esta despesa se repetirá mensalmente no dia {formData.dia_vencimento || 'X'}
+            </p>
+          </div>
+        )}
 
         {/* Campos específicos para despesas parceladas */}
         {formData.tipo === 'parcelada' && (
@@ -203,16 +264,19 @@ const CadastroDespesas = () => {
           )}
         </div>
 
-        <div>
-          <Label htmlFor="data_vencimento">Data de Vencimento *</Label>
-          <Input
-            id="data_vencimento"
-            type="date"
-            value={formData.data_vencimento}
-            onChange={(e) => handleInputChange('data_vencimento', e.target.value)}
-            required
-          />
-        </div>
+        {/* Data de vencimento para despesas variáveis e parceladas */}
+        {formData.tipo !== 'fixa' && (
+          <div>
+            <Label htmlFor="data_vencimento">Data de Vencimento *</Label>
+            <Input
+              id="data_vencimento"
+              type="date"
+              value={formData.data_vencimento}
+              onChange={(e) => handleInputChange('data_vencimento', e.target.value)}
+              required
+            />
+          </div>
+        )}
 
         <div>
           <Label htmlFor="observacoes">Observações</Label>
