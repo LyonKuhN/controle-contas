@@ -14,6 +14,7 @@ const CadastroDespesas = () => {
     valor: '',
     categoria_id: '',
     data_vencimento: '',
+    tipo: 'variavel' as 'fixa' | 'variavel' | 'parcelada',
     observacoes: ''
   });
 
@@ -22,6 +23,10 @@ const CadastroDespesas = () => {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleTipoChange = (value: 'fixa' | 'variavel' | 'parcelada') => {
+    setFormData(prev => ({ ...prev, tipo: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -36,6 +41,7 @@ const CadastroDespesas = () => {
       valor: parseFloat(formData.valor),
       categoria_id: formData.categoria_id,
       data_vencimento: formData.data_vencimento,
+      tipo: formData.tipo,
       pago: false,
       observacoes: formData.observacoes || undefined
     });
@@ -46,6 +52,7 @@ const CadastroDespesas = () => {
       valor: '',
       categoria_id: '',
       data_vencimento: '',
+      tipo: 'variavel',
       observacoes: ''
     });
   };
@@ -91,6 +98,20 @@ const CadastroDespesas = () => {
                   {categoria.nome}
                 </SelectItem>
               ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="tipo">Tipo de Despesa *</Label>
+          <Select value={formData.tipo} onValueChange={handleTipoChange}>
+            <SelectTrigger>
+              <SelectValue placeholder="Selecione o tipo" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fixa">🔒 Fixa</SelectItem>
+              <SelectItem value="variavel">🔄 Variável</SelectItem>
+              <SelectItem value="parcelada">📅 Parcelada</SelectItem>
             </SelectContent>
           </Select>
         </div>

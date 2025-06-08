@@ -1,24 +1,22 @@
 
-import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ContasPagar from "@/components/controle-contas/ContasPagar";
 import HistoricoPagamentos from "@/components/controle-contas/HistoricoPagamentos";
+import NavigationIsland from "@/components/NavigationIsland";
 
 const ControleContas = () => {
   const [saldoAtual] = useState(5420.50);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-accent/20">
+      <NavigationIsland />
+      
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-4 mb-8">
-          <Link to="/" className="text-primary hover:text-primary/80 transition-colors">
-            <ArrowLeft size={24} />
-          </Link>
-          <h1 className="text-4xl font-bold text-foreground">Controle de Contas</h1>
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-4">📋 Controle de Contas</h1>
+          <p className="text-muted-foreground">Gerencie suas contas e acompanhe pagamentos</p>
         </div>
         
         {/* Saldo Atual */}

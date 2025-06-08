@@ -12,6 +12,7 @@ export interface Despesa {
   pago: boolean;
   data_pagamento?: string;
   observacoes?: string;
+  tipo: 'fixa' | 'variavel' | 'parcelada';
   categoria?: {
     nome: string;
     cor: string;
