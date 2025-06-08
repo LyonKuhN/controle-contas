@@ -101,35 +101,50 @@ export const useDespesas = () => {
     mutationFn: async (targetDate: Date) => {
       console.log('Gerando despesas fixas para:', targetDate.toLocaleDateString('pt-BR'));
       
-      // Buscar todas as despesas fixas modelo (que não têm data específica ainda)
-      const { data: despesasModelo, error: fetchError } = await supabase
+      // Buscar todas as despesas fixas
+      const { data: todasDespesasFixas, error: fetchError } = await supabase
         .from('despesas')
         .select('*')
-        .eq('tipo', 'fixa');
+        .eq('tipo', 'fixa')
+        .order('created_at', { ascending: true });
 
       if (fetchError) {
-        console.error('Erro ao buscar despesas modelo:', fetchError);
+        console.error('Erro ao buscar despesas fixas:', fetchError);
         throw fetchError;
       }
 
-      if (!despesasModelo || despesasModelo.length === 0) {
-        throw new Error('Nenhuma despesa fixa modelo encontrada');
+      if (!todasDespesasFixas || todasDespesasFixas.length === 0) {
+        throw new Error('Nenhuma despesa fixa encontrada');
       }
 
-      // Filtrar apenas despesas modelo (que podem ser usadas como base)
-      // Considero como modelo aquelas que são do tipo 'fixa' e não estão marcadas como pagas
-      const modelosReais = despesasModelo.filter(modelo => !modelo.pago);
+      console.log('Todas as despesas fixas encontradas:', todasDespesasFixas);
 
-      if (modelosReais.length === 0) {
+      // Identificar despesas modelo (as mais antigas de cada descrição+categoria)
+      // Uma despesa modelo é a primeira criada para cada combinação única de descrição+categoria
+      const modelosMap = new Map();
+      
+      todasDespesasFixas.forEach(despesa => {
+        const chave = `${despesa.descricao}-${despesa.categoria_id}`;
+        const dataCreated = new Date(despesa.created_at);
+        
+        if (!modelosMap.has(chave) || new Date(modelosMap.get(chave).created_at) > dataCreated) {
+          modelosMap.set(chave, despesa);
+        }
+      });
+
+      const despesasModelo = Array.from(modelosMap.values());
+      console.log('Despesas modelo identificadas:', despesasModelo);
+
+      if (despesasModelo.length === 0) {
         throw new Error('Nenhuma despesa fixa modelo disponível para gerar');
       }
 
       // Verificar se já existem despesas fixas para o mês selecionado
-      const inicioMes = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
-      const fimMes = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
-      
-      const inicioMesStr = inicioMes.toISOString().split('T')[0];
-      const fimMesStr = fimMes.toISOString().split('T')[0];
+      const ano = targetDate.getFullYear();
+      const mes = targetDate.getMonth() + 1;
+      const inicioMesStr = `${ano}-${String(mes).padStart(2, '0')}-01`;
+      const ultimoDia = new Date(ano, mes, 0).getDate();
+      const fimMesStr = `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
 
       console.log('Verificando despesas existentes entre:', inicioMesStr, 'e', fimMesStr);
 
@@ -147,11 +162,11 @@ export const useDespesas = () => {
 
       console.log('Despesas fixas existentes no mês:', despesasExistentes);
 
-      // Verificar se todas as despesas modelo já foram geradas para este mês
+      // Verificar quais modelos ainda não foram gerados para este mês
       let despesasJaExistentes = 0;
       const despesasParaGerar = [];
 
-      for (const modelo of modelosReais) {
+      for (const modelo of despesasModelo) {
         const jaExiste = despesasExistentes?.some(existente => 
           existente.descricao === modelo.descricao && 
           existente.categoria_id === modelo.categoria_id
@@ -162,32 +177,28 @@ export const useDespesas = () => {
           console.log(`Despesa ${modelo.descricao} já existe para este mês`);
         } else {
           despesasParaGerar.push(modelo);
+          console.log(`Despesa ${modelo.descricao} será gerada para este mês`);
         }
       }
 
       // Se todas as despesas já existem, informar ao usuário
-      if (despesasJaExistentes === modelosReais.length) {
+      if (despesasJaExistentes === despesasModelo.length) {
         throw new Error(`As despesas fixas já foram geradas para ${targetDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`);
       }
 
       // Gerar apenas as despesas que ainda não existem
       const promises = despesasParaGerar.map(async (modelo) => {
         // Extrair o dia da data de vencimento da despesa modelo
-        const dataModeloOriginal = new Date(modelo.data_vencimento + 'T12:00:00'); // Adicionar horário para evitar problemas de timezone
-        const diaVencimento = dataModeloOriginal.getDate();
+        const partesData = modelo.data_vencimento.split('-');
+        const diaVencimento = parseInt(partesData[2], 10);
         
         console.log(`Modelo original: ${modelo.data_vencimento}, Dia extraído: ${diaVencimento}`);
         
-        // Criar nova data para o mês/ano selecionado mantendo o dia original
-        // Usar formatação manual para evitar problemas de timezone
-        const ano = targetDate.getFullYear();
-        const mes = targetDate.getMonth() + 1; // getMonth() retorna 0-11, precisamos 1-12
-        
-        // Verificar se o dia existe no mês (ex: 31 de fevereiro)
+        // Verificar se o dia existe no mês alvo
         const ultimoDiaDoMes = new Date(ano, mes, 0).getDate();
         const diaFinal = Math.min(diaVencimento, ultimoDiaDoMes);
         
-        // Formatar a data manualmente para garantir que está correta
+        // Formatar a data manualmente para garantir precisão
         const dataVencimentoFormatada = `${ano}-${String(mes).padStart(2, '0')}-${String(diaFinal).padStart(2, '0')}`;
 
         console.log(`Criando despesa ${modelo.descricao} para ${dataVencimentoFormatada} (dia original: ${diaVencimento}, dia final: ${diaFinal})`);
