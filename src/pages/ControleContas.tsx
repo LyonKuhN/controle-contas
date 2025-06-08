@@ -5,9 +5,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ContasPagar from "@/components/controle-contas/ContasPagar";
 import HistoricoPagamentos from "@/components/controle-contas/HistoricoPagamentos";
 import NavigationIsland from "@/components/NavigationIsland";
+import { useDespesas } from "@/hooks/useDespesas";
+import { useReceitas } from "@/hooks/useReceitas";
 
 const ControleContas = () => {
-  const [saldoAtual] = useState(5420.50);
+  const { despesas } = useDespesas();
+  const { receitas } = useReceitas();
+
+  // Calcular saldo real baseado nas receitas recebidas e despesas pagas
+  const totalReceitasRecebidas = receitas
+    .filter(receita => receita.recebido)
+    .reduce((total, receita) => total + receita.valor, 0);
+
+  const totalDespesasPagas = despesas
+    .filter(despesa => despesa.pago)
+    .reduce((total, despesa) => total + despesa.valor, 0);
+
+  const saldoAtual = totalReceitasRecebidas - totalDespesasPagas;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-accent/20">
@@ -19,13 +33,17 @@ const ControleContas = () => {
           <p className="text-muted-foreground">Gerencie suas contas e acompanhe pagamentos</p>
         </div>
         
-        {/* Saldo Atual */}
-        <Card className="p-6 mb-8 bg-gradient-primary text-white">
+        {/* Saldo Atual Calculado Dinamicamente */}
+        <Card className={`p-6 mb-8 ${saldoAtual >= 0 ? 'bg-gradient-primary' : 'bg-gradient-to-r from-red-500 to-red-600'} text-white`}>
           <div className="text-center">
             <h2 className="text-lg font-medium mb-2">Saldo em Caixa</h2>
             <p className="text-3xl font-bold">
               R$ {saldoAtual.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
+            <div className="mt-2 text-sm opacity-90">
+              <p>Receitas Recebidas: R$ {totalReceitasRecebidas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p>Despesas Pagas: R$ {totalDespesasPagas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            </div>
           </div>
         </Card>
 

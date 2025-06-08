@@ -29,6 +29,7 @@ export const useDespesas = () => {
   const { data: despesas = [], isLoading } = useQuery({
     queryKey: ['despesas'],
     queryFn: async () => {
+      console.log('Buscando despesas do banco de dados...');
       const { data, error } = await supabase
         .from('despesas')
         .select(`
@@ -37,13 +38,18 @@ export const useDespesas = () => {
         `)
         .order('data_vencimento', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar despesas:', error);
+        throw error;
+      }
+      console.log('Despesas carregadas:', data);
       return data as Despesa[];
     }
   });
 
   const createDespesa = useMutation({
     mutationFn: async (despesa: Omit<Despesa, 'id' | 'categoria'>) => {
+      console.log('Criando despesa:', despesa);
       const { data, error } = await supabase
         .from('despesas')
         .insert([{
@@ -53,7 +59,11 @@ export const useDespesas = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao criar despesa:', error);
+        throw error;
+      }
+      console.log('Despesa criada:', data);
       return data;
     },
     onSuccess: () => {
@@ -64,6 +74,7 @@ export const useDespesas = () => {
       });
     },
     onError: (error) => {
+      console.error('Erro na mutação de despesa:', error);
       toast({
         title: "Erro",
         description: "Erro ao cadastrar despesa",
@@ -74,6 +85,7 @@ export const useDespesas = () => {
 
   const updateDespesa = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Despesa> & { id: string }) => {
+      console.log('Atualizando despesa:', id, updates);
       const { data, error } = await supabase
         .from('despesas')
         .update(updates)
@@ -81,7 +93,11 @@ export const useDespesas = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao atualizar despesa:', error);
+        throw error;
+      }
+      console.log('Despesa atualizada:', data);
       return data;
     },
     onSuccess: () => {
@@ -91,12 +107,17 @@ export const useDespesas = () => {
 
   const deleteDespesa = useMutation({
     mutationFn: async (id: string) => {
+      console.log('Deletando despesa:', id);
       const { error } = await supabase
         .from('despesas')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao deletar despesa:', error);
+        throw error;
+      }
+      console.log('Despesa deletada com sucesso');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['despesas'] });

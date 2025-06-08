@@ -26,6 +26,7 @@ export const useReceitas = () => {
   const { data: receitas = [], isLoading } = useQuery({
     queryKey: ['receitas'],
     queryFn: async () => {
+      console.log('Buscando receitas do banco de dados...');
       const { data, error } = await supabase
         .from('receitas')
         .select(`
@@ -34,13 +35,18 @@ export const useReceitas = () => {
         `)
         .order('data_recebimento', { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao buscar receitas:', error);
+        throw error;
+      }
+      console.log('Receitas carregadas:', data);
       return data as Receita[];
     }
   });
 
   const createReceita = useMutation({
     mutationFn: async (receita: Omit<Receita, 'id' | 'categoria'>) => {
+      console.log('Criando receita:', receita);
       const { data, error } = await supabase
         .from('receitas')
         .insert([{
@@ -50,7 +56,11 @@ export const useReceitas = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao criar receita:', error);
+        throw error;
+      }
+      console.log('Receita criada:', data);
       return data;
     },
     onSuccess: () => {
@@ -61,6 +71,7 @@ export const useReceitas = () => {
       });
     },
     onError: (error) => {
+      console.error('Erro na mutação de receita:', error);
       toast({
         title: "Erro",
         description: "Erro ao cadastrar receita",
@@ -71,6 +82,7 @@ export const useReceitas = () => {
 
   const updateReceita = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Receita> & { id: string }) => {
+      console.log('Atualizando receita:', id, updates);
       const { data, error } = await supabase
         .from('receitas')
         .update(updates)
@@ -78,22 +90,35 @@ export const useReceitas = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao atualizar receita:', error);
+        throw error;
+      }
+      console.log('Receita atualizada:', data);
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['receitas'] });
+      toast({
+        title: "Sucesso",
+        description: "Receita atualizada com sucesso!"
+      });
     }
   });
 
   const deleteReceita = useMutation({
     mutationFn: async (id: string) => {
+      console.log('Deletando receita:', id);
       const { error } = await supabase
         .from('receitas')
         .delete()
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao deletar receita:', error);
+        throw error;
+      }
+      console.log('Receita deletada com sucesso');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['receitas'] });
