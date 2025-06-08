@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -78,7 +77,13 @@ const ListaDespesas = () => {
                   <Badge className={despesa.pago ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}>
                     {despesa.pago ? 'Pago' : 'Pendente'}
                   </Badge>
-                  <Badge variant="outline">
+                  <Badge 
+                    variant="outline" 
+                    className={despesa.pago 
+                      ? 'border-green-600 text-green-800 bg-green-100' 
+                      : 'border-border text-foreground'
+                    }
+                  >
                     {despesa.tipo === 'fixa' && '🔒 Fixa'}
                     {despesa.tipo === 'variavel' && '🔄 Variável'}
                     {despesa.tipo === 'parcelada' && '📅 Parcelada'}
