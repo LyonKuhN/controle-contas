@@ -62,7 +62,7 @@ const ListaDespesas = () => {
                   <h3 className={`font-semibold ${despesa.pago ? 'text-green-800' : 'text-foreground'}`}>
                     {despesa.descricao}
                   </h3>
-                  <p className={`text-sm ${despesa.pago ? 'text-green-600' : 'text-muted-foreground'}`}>
+                  <p className={`text-sm ${despesa.pago ? 'text-green-700' : 'text-muted-foreground'}`}>
                     {despesa.categoria?.nome}
                   </p>
                   {despesa.tipo === 'parcelada' && (
@@ -88,7 +88,7 @@ const ListaDespesas = () => {
                       variant="ghost" 
                       size="sm"
                       onClick={() => handlePagar(despesa.id)}
-                      className="text-green-600 hover:text-green-700"
+                      className="text-green-600 hover:text-green-700 hover:bg-green-100"
                     >
                       <Check className="w-4 h-4" />
                     </Button>
@@ -98,7 +98,7 @@ const ListaDespesas = () => {
                       variant="ghost" 
                       size="sm"
                       onClick={() => desfazerPagamento(despesa.id)}
-                      className="text-orange-600 hover:text-orange-700"
+                      className="text-orange-600 hover:text-orange-700 hover:bg-orange-100"
                     >
                       <Undo className="w-4 h-4" />
                     </Button>
@@ -107,13 +107,17 @@ const ListaDespesas = () => {
                     variant="ghost" 
                     size="sm"
                     onClick={() => setEditingDespesa(despesa)}
+                    className={despesa.pago 
+                      ? "text-green-700 hover:text-green-800 hover:bg-green-100" 
+                      : "text-foreground hover:text-foreground hover:bg-accent"
+                    }
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-red-500 hover:text-red-700"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-100"
                     onClick={() => deleteDespesa.mutate(despesa.id)}
                   >
                     <Trash2 className="w-4 h-4" />
