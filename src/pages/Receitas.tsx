@@ -4,10 +4,13 @@ import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import CadastroReceitas from "@/components/receitas/CadastroReceitas";
 import ListaReceitas from "@/components/receitas/ListaReceitas";
+import NavigationIsland from "@/components/NavigationIsland";
 
 const Receitas = () => {
   return (
     <div className="min-h-screen bg-background">
+      <NavigationIsland />
+      
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-8">
           <Link to="/" className="text-primary hover:text-primary/80 transition-colors">

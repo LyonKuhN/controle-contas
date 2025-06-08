@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
-import { House, PieChart, FileText, DollarSign, RefreshCw } from "lucide-react";
+import NavigationIsland from "./NavigationIsland";
 
 const menuItems = [
   {
@@ -30,34 +30,13 @@ const menuItems = [
   }
 ];
 
-const navigationItems = [
-  { icon: House, path: "/", label: "Home" },
-  { icon: PieChart, path: "/dashboard", label: "Dashboard" },
-  { icon: FileText, path: "/despesas", label: "Despesas" },
-  { icon: DollarSign, path: "/receitas", label: "Receitas" },
-  { icon: RefreshCw, path: "/controle-contas", label: "Controle" }
-];
-
 const MainMenu = () => {
   return (
     <div className="min-h-screen">
       {/* Navigation Island */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="nav-island max-w-md mx-auto p-4 mb-8">
-          <div className="flex justify-center items-center space-x-6">
-            {navigationItems.map((item, index) => (
-              <Link 
-                key={item.path} 
-                to={item.path}
-                className="p-3 rounded-full hover:bg-white/20 transition-all duration-300 text-white/80 hover:text-white"
-                title={item.label}
-              >
-                <item.icon size={24} />
-              </Link>
-            ))}
-          </div>
-        </div>
+      <NavigationIsland />
 
+      <div className="container mx-auto px-4">
         {/* Header with Subtle Title */}
         <div className="text-center mb-16">
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-purple-300 to-purple-500 bg-clip-text text-transparent mb-4">
