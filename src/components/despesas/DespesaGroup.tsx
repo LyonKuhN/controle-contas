@@ -99,6 +99,23 @@ const DespesaGroup = ({ despesas, onPagar, onDesfazerPagamento, onEdit, onDelete
           
           {/* Botões de ação organizados horizontalmente */}
           <div className="flex gap-1 flex-shrink-0">
+            {/* Botão de agrupamento - apenas no card principal e quando há múltiplas despesas */}
+            {isMain && totalCount > 1 && (
+              <CollapsibleTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-foreground hover:bg-accent border"
+                  title={`${isOpen ? 'Recolher' : 'Expandir'} grupo (${paidCount}/${totalCount} pagas)`}
+                >
+                  {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  <span className="ml-1 text-xs">
+                    {paidCount}/{totalCount}
+                  </span>
+                </Button>
+              </CollapsibleTrigger>
+            )}
+            
             {!despesa.pago && (
               <Button 
                 variant="ghost" 
@@ -155,24 +172,7 @@ const DespesaGroup = ({ despesas, onPagar, onDesfazerPagamento, onEdit, onDelete
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <div className="space-y-2">
-        <div className="relative">
-          {renderDespesaCard(mainDespesa, true)}
-          
-          {totalCount > 1 && (
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="absolute top-2 left-2 bg-background/90 backdrop-blur-sm border shadow-sm z-10"
-              >
-                {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-                <span className="ml-1 text-xs">
-                  {paidCount}/{totalCount} pagas
-                </span>
-              </Button>
-            </CollapsibleTrigger>
-          )}
-        </div>
+        {renderDespesaCard(mainDespesa, true)}
         
         <CollapsibleContent className="space-y-2">
           {remainingDespesas.map(despesa => renderDespesaCard(despesa))}
