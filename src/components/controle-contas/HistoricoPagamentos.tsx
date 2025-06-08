@@ -1,51 +1,31 @@
 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-interface PagamentoHistorico {
-  id: string;
-  descricao: string;
-  valor: number;
-  dataPagamento: string;
-  categoria: string;
-  tipo: 'fixa' | 'variavel' | 'parcelada';
-}
+import { useDespesas } from "@/hooks/useDespesas";
 
 const HistoricoPagamentos = () => {
-  const historico: PagamentoHistorico[] = [
-    {
-      id: '1',
-      descricao: 'Energia Elétrica',
-      valor: 265.30,
-      dataPagamento: '2024-12-15',
-      categoria: 'Utilidades',
-      tipo: 'fixa'
-    },
-    {
-      id: '2',
-      descricao: 'Internet',
-      valor: 99.90,
-      dataPagamento: '2024-12-10',
-      categoria: 'Telecomunicações',
-      tipo: 'fixa'
-    },
-    {
-      id: '3',
-      descricao: 'Cartão de Crédito',
-      valor: 1250.80,
-      dataPagamento: '2024-12-08',
-      categoria: 'Financeiro',
-      tipo: 'variavel'
-    },
-    {
-      id: '4',
-      descricao: 'Financiamento do Carro',
-      valor: 580.00,
-      dataPagamento: '2024-12-05',
-      categoria: 'Transporte',
-      tipo: 'parcelada'
-    }
-  ];
+  const { despesas, isLoading } = useDespesas();
+
+  if (isLoading) {
+    return (
+      <Card className="p-6">
+        <div className="text-center">Carregando histórico...</div>
+      </Card>
+    );
+  }
+
+  // Filtrar apenas despesas pagas dos últimos 3 meses
+  const hoje = new Date();
+  const tresMesesAtras = new Date(hoje.getFullYear(), hoje.getMonth() - 3, 1);
+  
+  const despesasPagas = despesas.filter(despesa => 
+    despesa.pago && 
+    despesa.data_pagamento && 
+    new Date(despesa.data_pagamento) >= tresMesesAtras
+  ).sort((a, b) => {
+    if (!a.data_pagamento || !b.data_pagamento) return 0;
+    return new Date(b.data_pagamento).getTime() - new Date(a.data_pagamento).getTime();
+  });
 
   const getTipoColor = (tipo: string) => {
     switch(tipo) {
@@ -56,14 +36,23 @@ const HistoricoPagamentos = () => {
     }
   };
 
-  const totalPago = historico.reduce((total, item) => total + item.valor, 0);
+  const getTipoLabel = (tipo: string) => {
+    switch(tipo) {
+      case 'fixa': return 'Fixa';
+      case 'variavel': return 'Variável';
+      case 'parcelada': return 'Parcelada';
+      default: return tipo;
+    }
+  };
+
+  const totalPago = despesasPagas.reduce((total, despesa) => total + despesa.valor, 0);
 
   return (
     <div className="space-y-6">
       {/* Resumo */}
       <Card className="p-6">
         <div className="text-center">
-          <h3 className="text-lg font-medium mb-2">Total Pago no Último Mês</h3>
+          <h3 className="text-lg font-medium mb-2">Total Pago nos Últimos 3 Meses</h3>
           <p className="text-2xl font-bold text-primary">
             R$ {totalPago.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </p>
@@ -74,28 +63,41 @@ const HistoricoPagamentos = () => {
       <div>
         <h2 className="text-2xl font-bold mb-4">Histórico de Pagamentos</h2>
         <div className="space-y-4">
-          {historico.map((pagamento) => (
-            <Card key={pagamento.id} className="p-4">
+          {despesasPagas.map((despesa) => (
+            <Card key={despesa.id} className="p-4">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="font-semibold">{pagamento.descricao}</h3>
-                  <p className="text-sm text-muted-foreground">{pagamento.categoria}</p>
+                  <h3 className="font-semibold">{despesa.descricao}</h3>
+                  <p className="text-sm text-muted-foreground">{despesa.categoria?.nome}</p>
+                  {despesa.tipo === 'parcelada' && (
+                    <p className="text-xs text-muted-foreground">
+                      Parcela {despesa.parcela_atual} de {despesa.numero_parcelas}
+                    </p>
+                  )}
                 </div>
-                <Badge className={`${getTipoColor(pagamento.tipo)} text-white`}>
-                  {pagamento.tipo}
+                <Badge className={`${getTipoColor(despesa.tipo || 'variavel')} text-white`}>
+                  {getTipoLabel(despesa.tipo || 'variavel')}
                 </Badge>
               </div>
               
               <div className="flex justify-between items-center">
                 <p className="text-lg font-bold text-primary">
-                  R$ {pagamento.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ {despesa.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  {new Date(pagamento.dataPagamento).toLocaleDateString('pt-BR')}
-                </p>
+                {despesa.data_pagamento && (
+                  <p className="text-sm text-muted-foreground">
+                    {new Date(despesa.data_pagamento).toLocaleDateString('pt-BR')}
+                  </p>
+                )}
               </div>
             </Card>
           ))}
+
+          {despesasPagas.length === 0 && (
+            <Card className="p-8 text-center">
+              <p className="text-muted-foreground">Nenhum pagamento registrado nos últimos 3 meses.</p>
+            </Card>
+          )}
         </div>
       </div>
     </div>

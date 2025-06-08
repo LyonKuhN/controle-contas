@@ -11,6 +11,8 @@ export interface Receita {
   data_recebimento: string;
   recebido: boolean;
   observacoes?: string;
+  tipo?: 'fixa' | 'variavel';
+  dia_vencimento?: number; // Para receitas fixas, o dia do mês que vence
   categoria?: {
     nome: string;
     cor: string;

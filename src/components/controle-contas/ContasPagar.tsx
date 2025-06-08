@@ -1,61 +1,41 @@
 
-import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle } from "lucide-react";
-
-interface Despesa {
-  id: string;
-  descricao: string;
-  valor: number;
-  vencimento: string;
-  categoria: string;
-  tipo: 'fixa' | 'variavel' | 'parcelada';
-  paga: boolean;
-}
+import { useDespesas } from "@/hooks/useDespesas";
 
 const ContasPagar = () => {
-  const [despesas, setDespesas] = useState<Despesa[]>([
-    {
-      id: '1',
-      descricao: 'Energia Elétrica',
-      valor: 280.50,
-      vencimento: '2025-01-15',
-      categoria: 'Utilidades',
-      tipo: 'fixa',
-      paga: false
-    },
-    {
-      id: '2',
-      descricao: 'Internet',
-      valor: 99.90,
-      vencimento: '2025-01-10',
-      categoria: 'Telecomunicações',
-      tipo: 'fixa',
-      paga: false
-    },
-    {
-      id: '3',
-      descricao: 'Supermercado',
-      valor: 350.00,
-      vencimento: '2025-01-08',
-      categoria: 'Alimentação',
-      tipo: 'variavel',
-      paga: false
-    }
-  ]);
+  const { despesas, isLoading, updateDespesa } = useDespesas();
 
   const marcarComoPaga = (id: string) => {
-    setDespesas(prev => 
-      prev.map(despesa => 
-        despesa.id === id ? { ...despesa, paga: true } : despesa
-      )
-    );
+    updateDespesa.mutate({
+      id,
+      pago: true,
+      data_pagamento: new Date().toISOString().split('T')[0]
+    });
   };
 
-  const contasAPagar = despesas.filter(d => !d.paga);
-  const contasPagas = despesas.filter(d => d.paga);
+  if (isLoading) {
+    return (
+      <Card className="p-6">
+        <div className="text-center">Carregando despesas...</div>
+      </Card>
+    );
+  }
+
+  // Filtrar despesas do mês atual
+  const hoje = new Date();
+  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+  const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+
+  const despesasDoMes = despesas.filter(despesa => {
+    const dataVencimento = new Date(despesa.data_vencimento);
+    return dataVencimento >= inicioMes && dataVencimento <= fimMes;
+  });
+
+  const contasAPagar = despesasDoMes.filter(d => !d.pago);
+  const contasPagas = despesasDoMes.filter(d => d.pago);
 
   const getTipoColor = (tipo: string) => {
     switch(tipo) {
@@ -63,6 +43,15 @@ const ContasPagar = () => {
       case 'variavel': return 'bg-green-500';
       case 'parcelada': return 'bg-orange-500';
       default: return 'bg-gray-500';
+    }
+  };
+
+  const getTipoLabel = (tipo: string) => {
+    switch(tipo) {
+      case 'fixa': return 'Fixa';
+      case 'variavel': return 'Variável';
+      case 'parcelada': return 'Parcelada';
+      default: return tipo;
     }
   };
 
@@ -77,10 +66,15 @@ const ContasPagar = () => {
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="font-semibold">{despesa.descricao}</h3>
-                  <p className="text-sm text-muted-foreground">{despesa.categoria}</p>
+                  <p className="text-sm text-muted-foreground">{despesa.categoria?.nome}</p>
+                  {despesa.tipo === 'parcelada' && (
+                    <p className="text-xs text-muted-foreground">
+                      Parcela {despesa.parcela_atual} de {despesa.numero_parcelas}
+                    </p>
+                  )}
                 </div>
-                <Badge className={`${getTipoColor(despesa.tipo)} text-white`}>
-                  {despesa.tipo}
+                <Badge className={`${getTipoColor(despesa.tipo || 'variavel')} text-white`}>
+                  {getTipoLabel(despesa.tipo || 'variavel')}
                 </Badge>
               </div>
               
@@ -90,16 +84,17 @@ const ContasPagar = () => {
                     R$ {despesa.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Venc: {new Date(despesa.vencimento).toLocaleDateString('pt-BR')}
+                    Venc: {new Date(despesa.data_vencimento).toLocaleDateString('pt-BR')}
                   </p>
                 </div>
                 
                 <Button 
                   onClick={() => marcarComoPaga(despesa.id)}
                   className="bg-green-600 hover:bg-green-700"
+                  disabled={updateDespesa.isPending}
                 >
                   <CheckCircle className="w-4 h-4 mr-2" />
-                  Pagar
+                  {updateDespesa.isPending ? 'Pagando...' : 'Pagar'}
                 </Button>
               </div>
             </Card>
@@ -122,10 +117,15 @@ const ContasPagar = () => {
               <div className="flex justify-between items-start mb-3">
                 <div>
                   <h3 className="font-semibold">{despesa.descricao}</h3>
-                  <p className="text-sm text-muted-foreground">{despesa.categoria}</p>
+                  <p className="text-sm text-muted-foreground">{despesa.categoria?.nome}</p>
+                  {despesa.tipo === 'parcelada' && (
+                    <p className="text-xs text-muted-foreground">
+                      Parcela {despesa.parcela_atual} de {despesa.numero_parcelas}
+                    </p>
+                  )}
                 </div>
-                <Badge className={`${getTipoColor(despesa.tipo)} text-white`}>
-                  {despesa.tipo}
+                <Badge className={`${getTipoColor(despesa.tipo || 'variavel')} text-white`}>
+                  {getTipoLabel(despesa.tipo || 'variavel')}
                 </Badge>
               </div>
               
@@ -134,9 +134,11 @@ const ContasPagar = () => {
                   <p className="text-lg font-bold text-green-600">
                     R$ {despesa.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
-                  <p className="text-sm text-muted-foreground">
-                    Pago em: {new Date().toLocaleDateString('pt-BR')}
-                  </p>
+                  {despesa.data_pagamento && (
+                    <p className="text-sm text-muted-foreground">
+                      Pago em: {new Date(despesa.data_pagamento).toLocaleDateString('pt-BR')}
+                    </p>
+                  )}
                 </div>
                 
                 <CheckCircle className="w-6 h-6 text-green-600" />
