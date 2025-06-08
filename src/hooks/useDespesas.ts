@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -105,8 +104,7 @@ export const useDespesas = () => {
       const { data: despesasModelo, error: fetchError } = await supabase
         .from('despesas')
         .select('*')
-        .eq('tipo', 'fixa')
-        .eq('pago', false);
+        .eq('tipo', 'fixa');
 
       if (fetchError) {
         console.error('Erro ao buscar despesas modelo:', fetchError);
@@ -117,12 +115,67 @@ export const useDespesas = () => {
         throw new Error('Nenhuma despesa fixa modelo encontrada');
       }
 
-      // Gerar despesas para o mês selecionado
-      const promises = despesasModelo.map(async (modelo) => {
+      // Filtrar apenas despesas modelo (que podem ser usadas como base)
+      // Considero como modelo aquelas que são do tipo 'fixa' e não estão marcadas como pagas
+      const modelosReais = despesasModelo.filter(modelo => !modelo.pago);
+
+      if (modelosReais.length === 0) {
+        throw new Error('Nenhuma despesa fixa modelo disponível para gerar');
+      }
+
+      // Verificar se já existem despesas fixas para o mês selecionado
+      const inicioMes = new Date(targetDate.getFullYear(), targetDate.getMonth(), 1);
+      const fimMes = new Date(targetDate.getFullYear(), targetDate.getMonth() + 1, 0);
+      
+      const inicioMesStr = inicioMes.toISOString().split('T')[0];
+      const fimMesStr = fimMes.toISOString().split('T')[0];
+
+      console.log('Verificando despesas existentes entre:', inicioMesStr, 'e', fimMesStr);
+
+      const { data: despesasExistentes, error: checkError } = await supabase
+        .from('despesas')
+        .select('descricao, categoria_id, data_vencimento')
+        .eq('tipo', 'fixa')
+        .gte('data_vencimento', inicioMesStr)
+        .lte('data_vencimento', fimMesStr);
+
+      if (checkError) {
+        console.error('Erro ao verificar despesas existentes:', checkError);
+        throw checkError;
+      }
+
+      console.log('Despesas fixas existentes no mês:', despesasExistentes);
+
+      // Verificar se todas as despesas modelo já foram geradas para este mês
+      let despesasJaExistentes = 0;
+      const despesasParaGerar = [];
+
+      for (const modelo of modelosReais) {
+        const jaExiste = despesasExistentes?.some(existente => 
+          existente.descricao === modelo.descricao && 
+          existente.categoria_id === modelo.categoria_id
+        );
+
+        if (jaExiste) {
+          despesasJaExistentes++;
+          console.log(`Despesa ${modelo.descricao} já existe para este mês`);
+        } else {
+          despesasParaGerar.push(modelo);
+        }
+      }
+
+      // Se todas as despesas já existem, informar ao usuário
+      if (despesasJaExistentes === modelosReais.length) {
+        throw new Error(`As despesas fixas já foram geradas para ${targetDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`);
+      }
+
+      // Gerar apenas as despesas que ainda não existem
+      const promises = despesasParaGerar.map(async (modelo) => {
         // Extrair o dia da data de vencimento da despesa modelo
-        const diaVencimento = new Date(modelo.data_vencimento).getDate();
+        const dataModeloOriginal = new Date(modelo.data_vencimento);
+        const diaVencimento = dataModeloOriginal.getDate();
         
-        // Criar nova data para o mês/ano selecionado
+        // Criar nova data para o mês/ano selecionado mantendo o dia original
         const novaData = new Date(targetDate.getFullYear(), targetDate.getMonth(), diaVencimento);
         
         // Se o dia não existe no mês (ex: 31 de fevereiro), ajustar para o último dia do mês
@@ -130,19 +183,10 @@ export const useDespesas = () => {
           novaData.setDate(0); // Vai para o último dia do mês anterior
         }
 
-        // Verificar se já existe uma despesa igual para este mês
-        const { data: existingDespesa } = await supabase
-          .from('despesas')
-          .select('id')
-          .eq('descricao', modelo.descricao)
-          .eq('categoria_id', modelo.categoria_id)
-          .eq('data_vencimento', novaData.toISOString().split('T')[0])
-          .single();
+        // Formatar a data corretamente para evitar problemas de fuso horário
+        const dataVencimentoFormatada = `${novaData.getFullYear()}-${String(novaData.getMonth() + 1).padStart(2, '0')}-${String(novaData.getDate()).padStart(2, '0')}`;
 
-        if (existingDespesa) {
-          console.log(`Despesa ${modelo.descricao} já existe para ${novaData.toLocaleDateString('pt-BR')}`);
-          return null;
-        }
+        console.log(`Criando despesa ${modelo.descricao} para ${dataVencimentoFormatada}`);
 
         const { data, error } = await supabase
           .from('despesas')
@@ -150,7 +194,7 @@ export const useDespesas = () => {
             descricao: modelo.descricao,
             valor: modelo.valor,
             categoria_id: modelo.categoria_id,
-            data_vencimento: novaData.toISOString().split('T')[0],
+            data_vencimento: dataVencimentoFormatada,
             tipo: 'fixa',
             observacoes: modelo.observacoes,
             user_id: modelo.user_id,
@@ -168,10 +212,8 @@ export const useDespesas = () => {
       });
 
       const results = await Promise.all(promises);
-      const createdDespesas = results.filter(result => result !== null);
-      
-      console.log(`${createdDespesas.length} despesas fixas geradas`);
-      return createdDespesas;
+      console.log(`${results.length} despesas fixas geradas`);
+      return results;
     },
     onSuccess: (createdDespesas) => {
       queryClient.invalidateQueries({ queryKey: ['despesas'] });
@@ -183,9 +225,9 @@ export const useDespesas = () => {
     onError: (error: any) => {
       console.error('Erro ao gerar despesas fixas:', error);
       toast({
-        title: "Erro",
+        title: "Informação",
         description: error.message || "Erro ao gerar despesas fixas",
-        variant: "destructive"
+        variant: error.message?.includes('já foram geradas') ? "default" : "destructive"
       });
     }
   });
