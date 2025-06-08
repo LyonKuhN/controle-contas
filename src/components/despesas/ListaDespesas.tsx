@@ -47,10 +47,23 @@ const ListaDespesas = () => {
                 <p className="text-sm text-muted-foreground">
                   {despesa.categoria?.nome}
                 </p>
+                {despesa.tipo === 'parcelada' && (
+                  <p className="text-xs text-muted-foreground">
+                    Parcela {despesa.parcela_atual} de {despesa.numero_parcelas}
+                    {despesa.valor_total && (
+                      <> • Total: R$ {despesa.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
+                    )}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <Badge className={despesa.pago ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}>
                   {despesa.pago ? 'Pago' : 'Pendente'}
+                </Badge>
+                <Badge variant="outline">
+                  {despesa.tipo === 'fixa' && '🔒 Fixa'}
+                  {despesa.tipo === 'variavel' && '🔄 Variável'}
+                  {despesa.tipo === 'parcelada' && '📅 Parcelada'}
                 </Badge>
                 {!despesa.pago && (
                   <Button 
@@ -80,6 +93,7 @@ const ListaDespesas = () => {
               <div>
                 <p className="text-lg font-bold text-primary">
                   R$ {despesa.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  {despesa.tipo === 'parcelada' && <span className="text-sm font-normal text-muted-foreground"> /parcela</span>}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Vencimento: {new Date(despesa.data_vencimento).toLocaleDateString('pt-BR')}

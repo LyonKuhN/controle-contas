@@ -13,6 +13,9 @@ export interface Despesa {
   data_pagamento?: string;
   observacoes?: string;
   tipo: 'fixa' | 'variavel' | 'parcelada';
+  numero_parcelas?: number;
+  valor_total?: number;
+  parcela_atual?: number;
   categoria?: {
     nome: string;
     cor: string;

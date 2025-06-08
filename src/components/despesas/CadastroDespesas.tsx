@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useDespesas } from "@/hooks/useDespesas";
 import { useCategorias } from "@/hooks/useCategorias";
 
@@ -15,7 +16,10 @@ const CadastroDespesas = () => {
     categoria_id: '',
     data_vencimento: '',
     tipo: 'variavel' as 'fixa' | 'variavel' | 'parcelada',
-    observacoes: ''
+    observacoes: '',
+    numero_parcelas: '',
+    valor_total: '',
+    tipo_valor: 'total' as 'total' | 'parcela' // total = valor informado é o total, parcela = valor informado é por parcela
   });
 
   const { createDespesa } = useDespesas();
@@ -26,7 +30,14 @@ const CadastroDespesas = () => {
   };
 
   const handleTipoChange = (value: 'fixa' | 'variavel' | 'parcelada') => {
-    setFormData(prev => ({ ...prev, tipo: value }));
+    setFormData(prev => ({ 
+      ...prev, 
+      tipo: value,
+      // Reset parcela fields when changing type
+      numero_parcelas: value !== 'parcelada' ? '' : prev.numero_parcelas,
+      valor_total: value !== 'parcelada' ? '' : prev.valor_total,
+      tipo_valor: 'total'
+    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -36,14 +47,38 @@ const CadastroDespesas = () => {
       return;
     }
 
+    // Validação específica para despesas parceladas
+    if (formData.tipo === 'parcelada' && !formData.numero_parcelas) {
+      return;
+    }
+
+    let valorFinal = parseFloat(formData.valor);
+    let valorTotal = valorFinal;
+
+    // Calcular valores para despesas parceladas
+    if (formData.tipo === 'parcelada') {
+      const numeroParcelas = parseInt(formData.numero_parcelas);
+      
+      if (formData.tipo_valor === 'total') {
+        // Se o valor informado é o total, dividir pelas parcelas
+        valorFinal = valorTotal / numeroParcelas;
+      } else {
+        // Se o valor informado é por parcela, multiplicar pelo número de parcelas
+        valorTotal = valorFinal * numeroParcelas;
+      }
+    }
+
     createDespesa.mutate({
       descricao: formData.descricao,
-      valor: parseFloat(formData.valor),
+      valor: valorFinal,
       categoria_id: formData.categoria_id,
       data_vencimento: formData.data_vencimento,
       tipo: formData.tipo,
       pago: false,
-      observacoes: formData.observacoes || undefined
+      observacoes: formData.observacoes || undefined,
+      numero_parcelas: formData.tipo === 'parcelada' ? parseInt(formData.numero_parcelas) : undefined,
+      valor_total: formData.tipo === 'parcelada' ? valorTotal : undefined,
+      parcela_atual: formData.tipo === 'parcelada' ? 1 : undefined
     });
 
     // Reset form
@@ -53,7 +88,10 @@ const CadastroDespesas = () => {
       categoria_id: '',
       data_vencimento: '',
       tipo: 'variavel',
-      observacoes: ''
+      observacoes: '',
+      numero_parcelas: '',
+      valor_total: '',
+      tipo_valor: 'total'
     });
   };
 
@@ -69,19 +107,6 @@ const CadastroDespesas = () => {
             value={formData.descricao}
             onChange={(e) => handleInputChange('descricao', e.target.value)}
             placeholder="Ex: Energia elétrica"
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="valor">Valor *</Label>
-          <Input
-            id="valor"
-            type="number"
-            step="0.01"
-            value={formData.valor}
-            onChange={(e) => handleInputChange('valor', e.target.value)}
-            placeholder="0,00"
             required
           />
         </div>
@@ -114,6 +139,68 @@ const CadastroDespesas = () => {
               <SelectItem value="parcelada">📅 Parcelada</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        {/* Campos específicos para despesas parceladas */}
+        {formData.tipo === 'parcelada' && (
+          <>
+            <div>
+              <Label htmlFor="numero_parcelas">Número de Parcelas *</Label>
+              <Input
+                id="numero_parcelas"
+                type="number"
+                min="2"
+                value={formData.numero_parcelas}
+                onChange={(e) => handleInputChange('numero_parcelas', e.target.value)}
+                placeholder="Ex: 12"
+                required
+              />
+            </div>
+
+            <div>
+              <Label>O valor informado é: *</Label>
+              <RadioGroup
+                value={formData.tipo_valor}
+                onValueChange={(value) => handleInputChange('tipo_valor', value)}
+                className="flex flex-row space-x-6 mt-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="total" id="total" />
+                  <Label htmlFor="total">Valor total</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="parcela" id="parcela" />
+                  <Label htmlFor="parcela">Valor por parcela</Label>
+                </div>
+              </RadioGroup>
+            </div>
+          </>
+        )}
+
+        <div>
+          <Label htmlFor="valor">
+            {formData.tipo === 'parcelada' 
+              ? `Valor ${formData.tipo_valor === 'total' ? 'Total' : 'por Parcela'} *`
+              : 'Valor *'
+            }
+          </Label>
+          <Input
+            id="valor"
+            type="number"
+            step="0.01"
+            value={formData.valor}
+            onChange={(e) => handleInputChange('valor', e.target.value)}
+            placeholder="0,00"
+            required
+          />
+          {formData.tipo === 'parcelada' && formData.valor && formData.numero_parcelas && (
+            <p className="text-sm text-muted-foreground mt-1">
+              {formData.tipo_valor === 'total' 
+                ? `Valor por parcela: R$ ${(parseFloat(formData.valor) / parseInt(formData.numero_parcelas || '1')).toFixed(2)}`
+                : `Valor total: R$ ${(parseFloat(formData.valor) * parseInt(formData.numero_parcelas || '1')).toFixed(2)}`
+              }
+            </p>
+          )}
         </div>
 
         <div>

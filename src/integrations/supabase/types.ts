@@ -83,12 +83,15 @@ export type Database = {
           data_vencimento: string
           descricao: string
           id: string
+          numero_parcelas: number | null
           observacoes: string | null
           pago: boolean | null
+          parcela_atual: number | null
           tipo: string | null
           updated_at: string
           user_id: string
           valor: number
+          valor_total: number | null
         }
         Insert: {
           categoria_id?: string | null
@@ -97,12 +100,15 @@ export type Database = {
           data_vencimento: string
           descricao: string
           id?: string
+          numero_parcelas?: number | null
           observacoes?: string | null
           pago?: boolean | null
+          parcela_atual?: number | null
           tipo?: string | null
           updated_at?: string
           user_id: string
           valor: number
+          valor_total?: number | null
         }
         Update: {
           categoria_id?: string | null
@@ -111,12 +117,15 @@ export type Database = {
           data_vencimento?: string
           descricao?: string
           id?: string
+          numero_parcelas?: number | null
           observacoes?: string | null
           pago?: boolean | null
+          parcela_atual?: number | null
           tipo?: string | null
           updated_at?: string
           user_id?: string
           valor?: number
+          valor_total?: number | null
         }
         Relationships: [
           {
