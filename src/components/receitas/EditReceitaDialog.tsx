@@ -30,11 +30,18 @@ const EditReceitaDialog = ({ receita, open, onClose }: EditReceitaDialogProps) =
 
   useEffect(() => {
     if (receita) {
+      // Corrigir o bug da data formatando corretamente
+      let dataFormatada = '';
+      if (receita.data_recebimento) {
+        const data = new Date(receita.data_recebimento + 'T00:00:00');
+        dataFormatada = data.toISOString().split('T')[0];
+      }
+
       setFormData({
         descricao: receita.descricao || '',
         valor: receita.valor?.toString() || '',
         categoria_id: receita.categoria_id || '',
-        data_recebimento: receita.data_recebimento || '',
+        data_recebimento: dataFormatada,
         observacoes: receita.observacoes || '',
         tipo: receita.tipo || 'variavel'
       });

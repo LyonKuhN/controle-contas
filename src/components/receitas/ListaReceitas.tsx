@@ -56,9 +56,14 @@ const ListaReceitas = () => {
                   <h3 className={`font-semibold ${receita.recebido ? 'text-green-800' : 'text-foreground'}`}>
                     {receita.descricao}
                   </h3>
-                  <p className={`text-sm ${receita.recebido ? 'text-green-600' : 'text-muted-foreground'}`}>
+                  <p className={`text-sm ${receita.recebido ? 'text-green-700' : 'text-muted-foreground'}`}>
                     {receita.categoria?.nome}
                   </p>
+                  {receita.tipo && (
+                    <p className={`text-xs ${receita.recebido ? 'text-green-600' : 'text-muted-foreground'}`}>
+                      {receita.tipo === 'fixa' ? '🔒 Fixa' : '🔄 Variável'}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge className={receita.recebido ? 'bg-green-500 text-white' : 'bg-orange-500 text-white'}>
@@ -69,7 +74,7 @@ const ListaReceitas = () => {
                       variant="ghost" 
                       size="sm"
                       onClick={() => handleReceber(receita.id)}
-                      className="text-green-600 hover:text-green-700"
+                      className="text-green-600 hover:text-green-700 hover:bg-green-100"
                     >
                       <Check className="w-4 h-4" />
                     </Button>
@@ -79,7 +84,7 @@ const ListaReceitas = () => {
                       variant="ghost" 
                       size="sm"
                       onClick={() => desfazerRecebimento(receita.id)}
-                      className="text-orange-600 hover:text-orange-700"
+                      className="text-orange-600 hover:text-orange-700 hover:bg-orange-100"
                     >
                       <Undo className="w-4 h-4" />
                     </Button>
@@ -88,13 +93,17 @@ const ListaReceitas = () => {
                     variant="ghost" 
                     size="sm"
                     onClick={() => setEditingReceita(receita)}
+                    className={receita.recebido 
+                      ? "text-green-700 hover:text-green-800 hover:bg-green-100" 
+                      : "text-foreground hover:text-foreground hover:bg-accent"
+                    }
                   >
                     <Edit className="w-4 h-4" />
                   </Button>
                   <Button 
                     variant="ghost" 
                     size="sm" 
-                    className="text-red-500 hover:text-red-700"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-100"
                     onClick={() => deleteReceita.mutate(receita.id)}
                   >
                     <Trash2 className="w-4 h-4" />
@@ -108,7 +117,7 @@ const ListaReceitas = () => {
                     R$ {receita.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                   <p className={`text-sm ${receita.recebido ? 'text-green-600' : 'text-muted-foreground'}`}>
-                    Data: {new Date(receita.data_recebimento).toLocaleDateString('pt-BR')}
+                    Data: {new Date(receita.data_recebimento + 'T00:00:00').toLocaleDateString('pt-BR')}
                   </p>
                 </div>
               </div>
