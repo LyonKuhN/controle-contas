@@ -2,68 +2,28 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
-
-interface Receita {
-  id: string;
-  descricao: string;
-  valor: number;
-  categoria: string;
-  tipo: 'fixa' | 'variavel';
-  dataRecebimento?: string;
-  observacoes?: string;
-}
+import { Edit, Trash2, Check } from "lucide-react";
+import { useReceitas } from "@/hooks/useReceitas";
 
 const ListaReceitas = () => {
-  const receitas: Receita[] = [
-    {
-      id: '1',
-      descricao: 'Salário',
-      valor: 5500.00,
-      categoria: 'salario',
-      tipo: 'fixa',
-      dataRecebimento: '2025-01-05'
-    },
-    {
-      id: '2',
-      descricao: 'Freelance Design',
-      valor: 800.00,
-      categoria: 'freelance',
-      tipo: 'variavel',
-      dataRecebimento: '2025-01-15'
-    },
-    {
-      id: '3',
-      descricao: 'Dividendos',
-      valor: 120.50,
-      categoria: 'investimentos',
-      tipo: 'variavel',
-      dataRecebimento: '2025-01-10'
-    }
-  ];
+  const { receitas, isLoading, updateReceita, deleteReceita } = useReceitas();
 
-  const getTipoColor = (tipo: string) => {
-    switch(tipo) {
-      case 'fixa': return 'bg-blue-500';
-      case 'variavel': return 'bg-green-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getCategoriaLabel = (categoria: string) => {
-    const categorias: Record<string, string> = {
-      'salario': 'Salário',
-      'freelance': 'Freelance',
-      'investimentos': 'Investimentos',
-      'bonus': 'Bônus',
-      'vendas': 'Vendas',
-      'aluguel': 'Aluguel',
-      'outros': 'Outros'
-    };
-    return categorias[categoria] || categoria;
+  const handleReceber = (id: string) => {
+    updateReceita.mutate({
+      id,
+      recebido: true
+    });
   };
 
   const totalReceitas = receitas.reduce((total, receita) => total + receita.valor, 0);
+
+  if (isLoading) {
+    return (
+      <Card className="p-6">
+        <div className="text-center">Carregando receitas...</div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6">
@@ -79,22 +39,37 @@ const ListaReceitas = () => {
 
       <div className="space-y-4">
         {receitas.map((receita) => (
-          <Card key={receita.id} className="p-4 border border-border">
+          <Card key={receita.id} className={`p-4 border ${receita.recebido ? 'bg-green-50 border-green-200' : 'border-border'}`}>
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h3 className="font-semibold">{receita.descricao}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {getCategoriaLabel(receita.categoria)}
+                  {receita.categoria?.nome}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge className={`${getTipoColor(receita.tipo)} text-white`}>
-                  {receita.tipo}
+                <Badge className={receita.recebido ? 'bg-green-500 text-white' : 'bg-orange-500 text-white'}>
+                  {receita.recebido ? 'Recebido' : 'Pendente'}
                 </Badge>
+                {!receita.recebido && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleReceber(receita.id)}
+                    className="text-green-600 hover:text-green-700"
+                  >
+                    <Check className="w-4 h-4" />
+                  </Button>
+                )}
                 <Button variant="ghost" size="sm">
                   <Edit className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-red-500 hover:text-red-700"
+                  onClick={() => deleteReceita.mutate(receita.id)}
+                >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -105,11 +80,9 @@ const ListaReceitas = () => {
                 <p className="text-lg font-bold text-green-600">
                   R$ {receita.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
-                {receita.dataRecebimento && (
-                  <p className="text-sm text-muted-foreground">
-                    {receita.tipo === 'fixa' ? 'Recebimento mensal' : 'Data do recebimento'}: {new Date(receita.dataRecebimento).toLocaleDateString('pt-BR')}
-                  </p>
-                )}
+                <p className="text-sm text-muted-foreground">
+                  Data: {new Date(receita.data_recebimento).toLocaleDateString('pt-BR')}
+                </p>
               </div>
             </div>
           </Card>

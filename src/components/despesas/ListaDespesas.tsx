@@ -2,72 +2,29 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
-
-interface Despesa {
-  id: string;
-  descricao: string;
-  valor: number;
-  categoria: string;
-  tipo: 'fixa' | 'variavel' | 'parcelada';
-  dataVencimento?: string;
-  numeroParcelas?: number;
-  observacoes?: string;
-}
+import { Edit, Trash2, Check } from "lucide-react";
+import { useDespesas } from "@/hooks/useDespesas";
 
 const ListaDespesas = () => {
-  const despesas: Despesa[] = [
-    {
-      id: '1',
-      descricao: 'Energia Elétrica',
-      valor: 280.50,
-      categoria: 'utilidades',
-      tipo: 'fixa',
-      dataVencimento: '2025-01-15'
-    },
-    {
-      id: '2',
-      descricao: 'Supermercado',
-      valor: 350.00,
-      categoria: 'alimentacao',
-      tipo: 'variavel',
-      dataVencimento: '2025-01-08'
-    },
-    {
-      id: '3',
-      descricao: 'Financiamento do Carro',
-      valor: 580.00,
-      categoria: 'transporte',
-      tipo: 'parcelada',
-      numeroParcelas: 48,
-      dataVencimento: '2025-01-05'
-    }
-  ];
+  const { despesas, isLoading, updateDespesa, deleteDespesa } = useDespesas();
 
-  const getTipoColor = (tipo: string) => {
-    switch(tipo) {
-      case 'fixa': return 'bg-blue-500';
-      case 'variavel': return 'bg-green-500';
-      case 'parcelada': return 'bg-orange-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getCategoriaLabel = (categoria: string) => {
-    const categorias: Record<string, string> = {
-      'alimentacao': 'Alimentação',
-      'transporte': 'Transporte',
-      'moradia': 'Moradia',
-      'saude': 'Saúde',
-      'educacao': 'Educação',
-      'lazer': 'Lazer',
-      'utilidades': 'Utilidades',
-      'outros': 'Outros'
-    };
-    return categorias[categoria] || categoria;
+  const handlePagar = (id: string) => {
+    updateDespesa.mutate({
+      id,
+      pago: true,
+      data_pagamento: new Date().toISOString().split('T')[0]
+    });
   };
 
   const totalDespesas = despesas.reduce((total, despesa) => total + despesa.valor, 0);
+
+  if (isLoading) {
+    return (
+      <Card className="p-6">
+        <div className="text-center">Carregando despesas...</div>
+      </Card>
+    );
+  }
 
   return (
     <Card className="p-6">
@@ -83,22 +40,37 @@ const ListaDespesas = () => {
 
       <div className="space-y-4">
         {despesas.map((despesa) => (
-          <Card key={despesa.id} className="p-4 border border-border">
+          <Card key={despesa.id} className={`p-4 border ${despesa.pago ? 'bg-green-50 border-green-200' : 'border-border'}`}>
             <div className="flex justify-between items-start mb-3">
               <div>
                 <h3 className="font-semibold">{despesa.descricao}</h3>
                 <p className="text-sm text-muted-foreground">
-                  {getCategoriaLabel(despesa.categoria)}
+                  {despesa.categoria?.nome}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <Badge className={`${getTipoColor(despesa.tipo)} text-white`}>
-                  {despesa.tipo}
+                <Badge className={despesa.pago ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}>
+                  {despesa.pago ? 'Pago' : 'Pendente'}
                 </Badge>
+                {!despesa.pago && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handlePagar(despesa.id)}
+                    className="text-green-600 hover:text-green-700"
+                  >
+                    <Check className="w-4 h-4" />
+                  </Button>
+                )}
                 <Button variant="ghost" size="sm">
                   <Edit className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="sm" className="text-red-500 hover:text-red-700">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-red-500 hover:text-red-700"
+                  onClick={() => deleteDespesa.mutate(despesa.id)}
+                >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
@@ -109,14 +81,12 @@ const ListaDespesas = () => {
                 <p className="text-lg font-bold text-primary">
                   R$ {despesa.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
-                {despesa.dataVencimento && (
-                  <p className="text-sm text-muted-foreground">
-                    {despesa.tipo === 'variavel' ? 'Data do gasto' : 'Vencimento'}: {new Date(despesa.dataVencimento).toLocaleDateString('pt-BR')}
-                  </p>
-                )}
-                {despesa.numeroParcelas && (
-                  <p className="text-sm text-muted-foreground">
-                    {despesa.numeroParcelas}x parcelas
+                <p className="text-sm text-muted-foreground">
+                  Vencimento: {new Date(despesa.data_vencimento).toLocaleDateString('pt-BR')}
+                </p>
+                {despesa.pago && despesa.data_pagamento && (
+                  <p className="text-sm text-green-600">
+                    Pago em: {new Date(despesa.data_pagamento).toLocaleDateString('pt-BR')}
                   </p>
                 )}
               </div>

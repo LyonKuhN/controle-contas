@@ -5,20 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { useDespesas } from "@/hooks/useDespesas";
+import { useCategorias } from "@/hooks/useCategorias";
 
 const CadastroDespesas = () => {
   const [formData, setFormData] = useState({
     descricao: '',
     valor: '',
-    categoria: '',
-    tipo: '',
-    dataVencimento: '',
-    numeroParcelas: '',
+    categoria_id: '',
+    data_vencimento: '',
     observacoes: ''
   });
 
-  const { toast } = useToast();
+  const { createDespesa } = useDespesas();
+  const { categorias } = useCategorias('despesa');
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -27,30 +27,25 @@ const CadastroDespesas = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.descricao || !formData.valor || !formData.categoria || !formData.tipo) {
-      toast({
-        title: "Erro",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive"
-      });
+    if (!formData.descricao || !formData.valor || !formData.categoria_id || !formData.data_vencimento) {
       return;
     }
 
-    console.log('Despesa cadastrada:', formData);
-    
-    toast({
-      title: "Sucesso",
-      description: "Despesa cadastrada com sucesso!"
+    createDespesa.mutate({
+      descricao: formData.descricao,
+      valor: parseFloat(formData.valor),
+      categoria_id: formData.categoria_id,
+      data_vencimento: formData.data_vencimento,
+      pago: false,
+      observacoes: formData.observacoes || undefined
     });
 
     // Reset form
     setFormData({
       descricao: '',
       valor: '',
-      categoria: '',
-      tipo: '',
-      dataVencimento: '',
-      numeroParcelas: '',
+      categoria_id: '',
+      data_vencimento: '',
       observacoes: ''
     });
   };
@@ -67,6 +62,7 @@ const CadastroDespesas = () => {
             value={formData.descricao}
             onChange={(e) => handleInputChange('descricao', e.target.value)}
             placeholder="Ex: Energia elétrica"
+            required
           />
         </div>
 
@@ -79,91 +75,36 @@ const CadastroDespesas = () => {
             value={formData.valor}
             onChange={(e) => handleInputChange('valor', e.target.value)}
             placeholder="0,00"
+            required
           />
         </div>
 
         <div>
           <Label htmlFor="categoria">Categoria *</Label>
-          <Select onValueChange={(value) => handleInputChange('categoria', value)}>
+          <Select value={formData.categoria_id} onValueChange={(value) => handleInputChange('categoria_id', value)}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione uma categoria" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="alimentacao">Alimentação</SelectItem>
-              <SelectItem value="transporte">Transporte</SelectItem>
-              <SelectItem value="moradia">Moradia</SelectItem>
-              <SelectItem value="saude">Saúde</SelectItem>
-              <SelectItem value="educacao">Educação</SelectItem>
-              <SelectItem value="lazer">Lazer</SelectItem>
-              <SelectItem value="utilidades">Utilidades</SelectItem>
-              <SelectItem value="outros">Outros</SelectItem>
+              {categorias.map((categoria) => (
+                <SelectItem key={categoria.id} value={categoria.id}>
+                  {categoria.nome}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label htmlFor="tipo">Tipo de Despesa *</Label>
-          <Select onValueChange={(value) => handleInputChange('tipo', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="fixa">Fixa</SelectItem>
-              <SelectItem value="variavel">Variável</SelectItem>
-              <SelectItem value="parcelada">Parcelada</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label htmlFor="data_vencimento">Data de Vencimento *</Label>
+          <Input
+            id="data_vencimento"
+            type="date"
+            value={formData.data_vencimento}
+            onChange={(e) => handleInputChange('data_vencimento', e.target.value)}
+            required
+          />
         </div>
-
-        {/* Campos condicionais baseado no tipo */}
-        {formData.tipo === 'fixa' && (
-          <div>
-            <Label htmlFor="dataVencimento">Data de Vencimento</Label>
-            <Input
-              id="dataVencimento"
-              type="date"
-              value={formData.dataVencimento}
-              onChange={(e) => handleInputChange('dataVencimento', e.target.value)}
-            />
-          </div>
-        )}
-
-        {formData.tipo === 'variavel' && (
-          <div>
-            <Label htmlFor="dataGasto">Data do Gasto</Label>
-            <Input
-              id="dataGasto"
-              type="date"
-              value={formData.dataVencimento}
-              onChange={(e) => handleInputChange('dataVencimento', e.target.value)}
-            />
-          </div>
-        )}
-
-        {formData.tipo === 'parcelada' && (
-          <>
-            <div>
-              <Label htmlFor="numeroParcelas">Número de Parcelas</Label>
-              <Input
-                id="numeroParcelas"
-                type="number"
-                min="1"
-                value={formData.numeroParcelas}
-                onChange={(e) => handleInputChange('numeroParcelas', e.target.value)}
-                placeholder="Ex: 12"
-              />
-            </div>
-            <div>
-              <Label htmlFor="dataVencimento">Data da Primeira Parcela</Label>
-              <Input
-                id="dataVencimento"
-                type="date"
-                value={formData.dataVencimento}
-                onChange={(e) => handleInputChange('dataVencimento', e.target.value)}
-              />
-            </div>
-          </>
-        )}
 
         <div>
           <Label htmlFor="observacoes">Observações</Label>
@@ -175,8 +116,8 @@ const CadastroDespesas = () => {
           />
         </div>
 
-        <Button type="submit" className="w-full">
-          Cadastrar Despesa
+        <Button type="submit" className="w-full" disabled={createDespesa.isPending}>
+          {createDespesa.isPending ? 'Cadastrando...' : 'Cadastrar Despesa'}
         </Button>
       </form>
     </Card>

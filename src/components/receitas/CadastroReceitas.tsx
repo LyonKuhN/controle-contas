@@ -5,19 +5,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
+import { useReceitas } from "@/hooks/useReceitas";
+import { useCategorias } from "@/hooks/useCategorias";
 
 const CadastroReceitas = () => {
   const [formData, setFormData] = useState({
     descricao: '',
     valor: '',
-    categoria: '',
-    tipo: '',
-    dataRecebimento: '',
+    categoria_id: '',
+    data_recebimento: '',
     observacoes: ''
   });
 
-  const { toast } = useToast();
+  const { createReceita } = useReceitas();
+  const { categorias } = useCategorias('receita');
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -26,29 +27,25 @@ const CadastroReceitas = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.descricao || !formData.valor || !formData.categoria || !formData.tipo) {
-      toast({
-        title: "Erro",
-        description: "Por favor, preencha todos os campos obrigatórios.",
-        variant: "destructive"
-      });
+    if (!formData.descricao || !formData.valor || !formData.categoria_id || !formData.data_recebimento) {
       return;
     }
 
-    console.log('Receita cadastrada:', formData);
-    
-    toast({
-      title: "Sucesso",
-      description: "Receita cadastrada com sucesso!"
+    createReceita.mutate({
+      descricao: formData.descricao,
+      valor: parseFloat(formData.valor),
+      categoria_id: formData.categoria_id,
+      data_recebimento: formData.data_recebimento,
+      recebido: false,
+      observacoes: formData.observacoes || undefined
     });
 
     // Reset form
     setFormData({
       descricao: '',
       valor: '',
-      categoria: '',
-      tipo: '',
-      dataRecebimento: '',
+      categoria_id: '',
+      data_recebimento: '',
       observacoes: ''
     });
   };
@@ -65,6 +62,7 @@ const CadastroReceitas = () => {
             value={formData.descricao}
             onChange={(e) => handleInputChange('descricao', e.target.value)}
             placeholder="Ex: Salário"
+            required
           />
         </div>
 
@@ -77,64 +75,36 @@ const CadastroReceitas = () => {
             value={formData.valor}
             onChange={(e) => handleInputChange('valor', e.target.value)}
             placeholder="0,00"
+            required
           />
         </div>
 
         <div>
           <Label htmlFor="categoria">Categoria *</Label>
-          <Select onValueChange={(value) => handleInputChange('categoria', value)}>
+          <Select value={formData.categoria_id} onValueChange={(value) => handleInputChange('categoria_id', value)}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione uma categoria" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="salario">Salário</SelectItem>
-              <SelectItem value="freelance">Freelance</SelectItem>
-              <SelectItem value="investimentos">Investimentos</SelectItem>
-              <SelectItem value="bonus">Bônus</SelectItem>
-              <SelectItem value="vendas">Vendas</SelectItem>
-              <SelectItem value="aluguel">Aluguel</SelectItem>
-              <SelectItem value="outros">Outros</SelectItem>
+              {categorias.map((categoria) => (
+                <SelectItem key={categoria.id} value={categoria.id}>
+                  {categoria.nome}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
 
         <div>
-          <Label htmlFor="tipo">Tipo de Receita *</Label>
-          <Select onValueChange={(value) => handleInputChange('tipo', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="fixa">Fixa</SelectItem>
-              <SelectItem value="variavel">Variável</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label htmlFor="data_recebimento">Data de Recebimento *</Label>
+          <Input
+            id="data_recebimento"
+            type="date"
+            value={formData.data_recebimento}
+            onChange={(e) => handleInputChange('data_recebimento', e.target.value)}
+            required
+          />
         </div>
-
-        {/* Campos condicionais baseado no tipo */}
-        {formData.tipo === 'fixa' && (
-          <div>
-            <Label htmlFor="dataRecebimento">Data de Recebimento Mensal</Label>
-            <Input
-              id="dataRecebimento"
-              type="date"
-              value={formData.dataRecebimento}
-              onChange={(e) => handleInputChange('dataRecebimento', e.target.value)}
-            />
-          </div>
-        )}
-
-        {formData.tipo === 'variavel' && (
-          <div>
-            <Label htmlFor="dataRecebimento">Data do Recebimento</Label>
-            <Input
-              id="dataRecebimento"
-              type="date"
-              value={formData.dataRecebimento}
-              onChange={(e) => handleInputChange('dataRecebimento', e.target.value)}
-            />
-          </div>
-        )}
 
         <div>
           <Label htmlFor="observacoes">Observações</Label>
@@ -146,8 +116,8 @@ const CadastroReceitas = () => {
           />
         </div>
 
-        <Button type="submit" className="w-full">
-          Cadastrar Receita
+        <Button type="submit" className="w-full" disabled={createReceita.isPending}>
+          {createReceita.isPending ? 'Cadastrando...' : 'Cadastrar Receita'}
         </Button>
       </form>
     </Card>
