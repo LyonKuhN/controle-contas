@@ -66,12 +66,18 @@ export const useDespesas = () => {
       console.log('Despesa criada:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['despesas'] });
-      toast({
-        title: "Sucesso",
-        description: "Despesa cadastrada com sucesso!"
-      });
+      
+      // Only show toast for single expenses or the last installment
+      if (!variables.parcela_atual || variables.parcela_atual === variables.numero_parcelas) {
+        toast({
+          title: "Sucesso",
+          description: variables.numero_parcelas 
+            ? `Despesa parcelada cadastrada com ${variables.numero_parcelas} parcelas!`
+            : "Despesa cadastrada com sucesso!"
+        });
+      }
     },
     onError: (error) => {
       console.error('Erro na mutação de despesa:', error);

@@ -42,8 +42,10 @@ const ListaReceitas = () => {
           <Card key={receita.id} className={`p-4 border ${receita.recebido ? 'bg-green-50 border-green-200' : 'border-border'}`}>
             <div className="flex justify-between items-start mb-3">
               <div>
-                <h3 className="font-semibold">{receita.descricao}</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className={`font-semibold ${receita.recebido ? 'text-green-800' : 'text-foreground'}`}>
+                  {receita.descricao}
+                </h3>
+                <p className={`text-sm ${receita.recebido ? 'text-green-600' : 'text-muted-foreground'}`}>
                   {receita.categoria?.nome}
                 </p>
               </div>
@@ -77,10 +79,10 @@ const ListaReceitas = () => {
             
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-lg font-bold text-green-600">
+                <p className={`text-lg font-bold ${receita.recebido ? 'text-green-700' : 'text-green-600'}`}>
                   R$ {receita.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className={`text-sm ${receita.recebido ? 'text-green-600' : 'text-muted-foreground'}`}>
                   Data: {new Date(receita.data_recebimento).toLocaleDateString('pt-BR')}
                 </p>
               </div>

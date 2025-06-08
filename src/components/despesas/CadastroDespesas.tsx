@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -66,7 +67,26 @@ const CadastroDespesas = () => {
     return targetDate.toISOString().split('T')[0];
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const createParcelasDespesa = async (despesaBase: any, numeroParcelas: number, dataInicial: string) => {
+    const promises = [];
+    
+    for (let i = 0; i < numeroParcelas; i++) {
+      const dataVencimento = new Date(dataInicial);
+      dataVencimento.setMonth(dataVencimento.getMonth() + i);
+      
+      const despesaParcela = {
+        ...despesaBase,
+        data_vencimento: dataVencimento.toISOString().split('T')[0],
+        parcela_atual: i + 1
+      };
+      
+      promises.push(createDespesa.mutateAsync(despesaParcela));
+    }
+    
+    return Promise.all(promises);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.descricao || !formData.valor || !formData.categoria_id) {
@@ -106,32 +126,46 @@ const CadastroDespesas = () => {
       }
     }
 
-    createDespesa.mutate({
+    const despesaBase = {
       descricao: formData.descricao,
       valor: valorFinal,
       categoria_id: formData.categoria_id,
-      data_vencimento: dataVencimento,
       tipo: formData.tipo,
       pago: false,
       observacoes: formData.observacoes || undefined,
       numero_parcelas: formData.tipo === 'parcelada' ? parseInt(formData.numero_parcelas) : undefined,
-      valor_total: formData.tipo === 'parcelada' ? valorTotal : undefined,
-      parcela_atual: formData.tipo === 'parcelada' ? 1 : undefined
-    });
+      valor_total: formData.tipo === 'parcelada' ? valorTotal : undefined
+    };
 
-    // Reset form
-    setFormData({
-      descricao: '',
-      valor: '',
-      categoria_id: '',
-      data_vencimento: '',
-      dia_vencimento: '',
-      tipo: 'variavel',
-      observacoes: '',
-      numero_parcelas: '',
-      valor_total: '',
-      tipo_valor: 'total'
-    });
+    try {
+      if (formData.tipo === 'parcelada') {
+        // Criar todas as parcelas automaticamente
+        await createParcelasDespesa(despesaBase, parseInt(formData.numero_parcelas), dataVencimento);
+      } else {
+        // Criar despesa única
+        await createDespesa.mutateAsync({
+          ...despesaBase,
+          data_vencimento: dataVencimento,
+          parcela_atual: undefined
+        });
+      }
+
+      // Reset form
+      setFormData({
+        descricao: '',
+        valor: '',
+        categoria_id: '',
+        data_vencimento: '',
+        dia_vencimento: '',
+        tipo: 'variavel',
+        observacoes: '',
+        numero_parcelas: '',
+        valor_total: '',
+        tipo_valor: 'total'
+      });
+    } catch (error) {
+      console.error('Erro ao cadastrar despesa:', error);
+    }
   };
 
   return (
@@ -267,10 +301,12 @@ const CadastroDespesas = () => {
           )}
         </div>
 
-        {/* Data de vencimento para despesas variáveis e parceladas */}
+        {/* Data de vencimento para despesas variáveis e primeira parcela para parceladas */}
         {formData.tipo !== 'fixa' && (
           <div>
-            <Label htmlFor="data_vencimento">Data de Vencimento *</Label>
+            <Label htmlFor="data_vencimento">
+              {formData.tipo === 'parcelada' ? 'Data da Primeira Parcela *' : 'Data de Vencimento *'}
+            </Label>
             <Input
               id="data_vencimento"
               type="date"
@@ -278,6 +314,11 @@ const CadastroDespesas = () => {
               onChange={(e) => handleInputChange('data_vencimento', e.target.value)}
               required
             />
+            {formData.tipo === 'parcelada' && (
+              <p className="text-sm text-muted-foreground mt-1">
+                As demais parcelas serão criadas automaticamente, mês a mês
+              </p>
+            )}
           </div>
         )}
 
