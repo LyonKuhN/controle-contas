@@ -73,7 +73,7 @@ export const useDespesas = () => {
       if (variables.tipo === 'fixa') {
         toast({
           title: "Sucesso",
-          description: "Despesa fixa cadastrada para os próximos 12 meses!"
+          description: "Despesa fixa modelo cadastrada! Use o botão 'Gerar Despesas Fixas' no controle de contas para criar as despesas do mês."
         });
       } else if (variables.numero_parcelas && variables.parcela_atual === variables.numero_parcelas) {
         toast({
@@ -92,6 +92,99 @@ export const useDespesas = () => {
       toast({
         title: "Erro",
         description: "Erro ao cadastrar despesa",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const generateDespesasFixas = useMutation({
+    mutationFn: async (targetDate: Date) => {
+      console.log('Gerando despesas fixas para:', targetDate.toLocaleDateString('pt-BR'));
+      
+      // Buscar todas as despesas fixas modelo (que não têm data específica ainda)
+      const { data: despesasModelo, error: fetchError } = await supabase
+        .from('despesas')
+        .select('*')
+        .eq('tipo', 'fixa')
+        .eq('pago', false);
+
+      if (fetchError) {
+        console.error('Erro ao buscar despesas modelo:', fetchError);
+        throw fetchError;
+      }
+
+      if (!despesasModelo || despesasModelo.length === 0) {
+        throw new Error('Nenhuma despesa fixa modelo encontrada');
+      }
+
+      // Gerar despesas para o mês selecionado
+      const promises = despesasModelo.map(async (modelo) => {
+        // Extrair o dia da data de vencimento da despesa modelo
+        const diaVencimento = new Date(modelo.data_vencimento).getDate();
+        
+        // Criar nova data para o mês/ano selecionado
+        const novaData = new Date(targetDate.getFullYear(), targetDate.getMonth(), diaVencimento);
+        
+        // Se o dia não existe no mês (ex: 31 de fevereiro), ajustar para o último dia do mês
+        if (novaData.getMonth() !== targetDate.getMonth()) {
+          novaData.setDate(0); // Vai para o último dia do mês anterior
+        }
+
+        // Verificar se já existe uma despesa igual para este mês
+        const { data: existingDespesa } = await supabase
+          .from('despesas')
+          .select('id')
+          .eq('descricao', modelo.descricao)
+          .eq('categoria_id', modelo.categoria_id)
+          .eq('data_vencimento', novaData.toISOString().split('T')[0])
+          .single();
+
+        if (existingDespesa) {
+          console.log(`Despesa ${modelo.descricao} já existe para ${novaData.toLocaleDateString('pt-BR')}`);
+          return null;
+        }
+
+        const { data, error } = await supabase
+          .from('despesas')
+          .insert([{
+            descricao: modelo.descricao,
+            valor: modelo.valor,
+            categoria_id: modelo.categoria_id,
+            data_vencimento: novaData.toISOString().split('T')[0],
+            tipo: 'fixa',
+            observacoes: modelo.observacoes,
+            user_id: modelo.user_id,
+            pago: false
+          }])
+          .select()
+          .single();
+
+        if (error) {
+          console.error('Erro ao criar despesa fixa:', error);
+          throw error;
+        }
+
+        return data;
+      });
+
+      const results = await Promise.all(promises);
+      const createdDespesas = results.filter(result => result !== null);
+      
+      console.log(`${createdDespesas.length} despesas fixas geradas`);
+      return createdDespesas;
+    },
+    onSuccess: (createdDespesas) => {
+      queryClient.invalidateQueries({ queryKey: ['despesas'] });
+      toast({
+        title: "Sucesso",
+        description: `${createdDespesas.length} despesas fixas geradas para o mês selecionado!`
+      });
+    },
+    onError: (error: any) => {
+      console.error('Erro ao gerar despesas fixas:', error);
+      toast({
+        title: "Erro",
+        description: error.message || "Erro ao gerar despesas fixas",
         variant: "destructive"
       });
     }
@@ -147,6 +240,7 @@ export const useDespesas = () => {
     isLoading,
     createDespesa,
     updateDespesa,
-    deleteDespesa
+    deleteDespesa,
+    generateDespesasFixas
   };
 };

@@ -45,52 +45,6 @@ const CadastroDespesas = () => {
     }));
   };
 
-  const generateDateForFixedExpense = (day: number) => {
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentYear = today.getFullYear();
-    const currentDay = today.getDate();
-    
-    // Se o dia já passou neste mês, agendar para o próximo mês
-    let targetMonth = currentMonth;
-    let targetYear = currentYear;
-    
-    if (day < currentDay) {
-      targetMonth++;
-      if (targetMonth > 11) {
-        targetMonth = 0;
-        targetYear++;
-      }
-    }
-    
-    const targetDate = new Date(targetYear, targetMonth, day);
-    return targetDate.toISOString().split('T')[0];
-  };
-
-  // Função para gerar despesas fixas para os próximos 12 meses
-  const createDespesasFixas = async (despesaBase: any, diaVencimento: number) => {
-    const promises = [];
-    
-    for (let i = 0; i < 12; i++) {
-      const today = new Date();
-      const targetDate = new Date(today.getFullYear(), today.getMonth() + i, diaVencimento);
-      
-      // Se o dia não existe no mês (ex: 31 de fevereiro), ajustar para o último dia do mês
-      if (targetDate.getMonth() !== (today.getMonth() + i) % 12) {
-        targetDate.setDate(0); // Vai para o último dia do mês anterior
-      }
-      
-      const despesaFixa = {
-        ...despesaBase,
-        data_vencimento: targetDate.toISOString().split('T')[0]
-      };
-      
-      promises.push(createDespesa.mutateAsync(despesaFixa));
-    }
-    
-    return Promise.all(promises);
-  };
-
   const createParcelasDespesa = async (despesaBase: any, numeroParcelas: number, dataInicial: string) => {
     const promises = [];
     
@@ -135,6 +89,13 @@ const CadastroDespesas = () => {
     let valorTotal = valorFinal;
     let dataVencimento = formData.data_vencimento;
 
+    // Para despesas fixas, criar uma data modelo usando o primeiro dia do mês atual com o dia selecionado
+    if (formData.tipo === 'fixa') {
+      const hoje = new Date();
+      const diaVencimento = parseInt(formData.dia_vencimento);
+      dataVencimento = new Date(hoje.getFullYear(), hoje.getMonth(), diaVencimento).toISOString().split('T')[0];
+    }
+
     // Calcular valores para despesas parceladas
     if (formData.tipo === 'parcelada') {
       const numeroParcelas = parseInt(formData.numero_parcelas);
@@ -159,8 +120,12 @@ const CadastroDespesas = () => {
 
     try {
       if (formData.tipo === 'fixa') {
-        // Criar despesas fixas para os próximos 12 meses
-        await createDespesasFixas(despesaBase, parseInt(formData.dia_vencimento));
+        // Criar apenas uma despesa modelo para despesas fixas
+        await createDespesa.mutateAsync({
+          ...despesaBase,
+          data_vencimento: dataVencimento,
+          parcela_atual: undefined
+        });
       } else if (formData.tipo === 'parcelada') {
         // Criar todas as parcelas automaticamente
         await createParcelasDespesa(despesaBase, parseInt(formData.numero_parcelas), dataVencimento);
@@ -233,7 +198,7 @@ const CadastroDespesas = () => {
               <SelectValue placeholder="Selecione o tipo" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="fixa">🔒 Fixa (mensal)</SelectItem>
+              <SelectItem value="fixa">🔒 Fixa (modelo)</SelectItem>
               <SelectItem value="variavel">🔄 Variável</SelectItem>
               <SelectItem value="parcelada">📅 Parcelada</SelectItem>
             </SelectContent>
@@ -257,7 +222,7 @@ const CadastroDespesas = () => {
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground mt-1">
-              Esta despesa será criada para os próximos 12 meses, no dia {formData.dia_vencimento || 'X'} de cada mês
+              Esta despesa será salva como modelo. Use o botão "Gerar Despesas Fixas" no controle de contas para criar as despesas do mês.
             </p>
           </div>
         )}
