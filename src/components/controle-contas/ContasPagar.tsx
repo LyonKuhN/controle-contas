@@ -5,7 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle } from "lucide-react";
 import { useDespesas } from "@/hooks/useDespesas";
 
-const ContasPagar = () => {
+interface ContasPagarProps {
+  currentDate: Date;
+}
+
+const ContasPagar = ({ currentDate }: ContasPagarProps) => {
   const { despesas, isLoading, updateDespesa } = useDespesas();
 
   const marcarComoPaga = (id: string) => {
@@ -24,14 +28,16 @@ const ContasPagar = () => {
     );
   }
 
-  // Filtrar despesas do mês atual
+  // Filtrar despesas do mês selecionado e atrasadas
   const hoje = new Date();
-  const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-  const fimMes = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
+  const inicioMes = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+  const fimMes = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
   const despesasDoMes = despesas.filter(despesa => {
     const dataVencimento = new Date(despesa.data_vencimento);
-    return dataVencimento >= inicioMes && dataVencimento <= fimMes;
+    const isCurrentMonth = dataVencimento >= inicioMes && dataVencimento <= fimMes;
+    const isOverdue = dataVencimento < hoje && !despesa.pago && currentDate.getTime() === new Date(hoje.getFullYear(), hoje.getMonth(), 1).getTime();
+    return isCurrentMonth || isOverdue;
   });
 
   const contasAPagar = despesasDoMes.filter(d => !d.pago);
@@ -65,7 +71,7 @@ const ContasPagar = () => {
             <Card key={despesa.id} className="p-4">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="font-semibold">{despesa.descricao}</h3>
+                  <h3 className="font-semibold text-foreground">{despesa.descricao}</h3>
                   <p className="text-sm text-muted-foreground">{despesa.categoria?.nome}</p>
                   {despesa.tipo === 'parcelada' && (
                     <p className="text-xs text-muted-foreground">
@@ -116,10 +122,10 @@ const ContasPagar = () => {
             <Card key={despesa.id} className="p-4 bg-green-50 border-green-200">
               <div className="flex justify-between items-start mb-3">
                 <div>
-                  <h3 className="font-semibold">{despesa.descricao}</h3>
-                  <p className="text-sm text-muted-foreground">{despesa.categoria?.nome}</p>
+                  <h3 className="font-semibold text-green-800">{despesa.descricao}</h3>
+                  <p className="text-sm text-green-600">{despesa.categoria?.nome}</p>
                   {despesa.tipo === 'parcelada' && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-green-600">
                       Parcela {despesa.parcela_atual} de {despesa.numero_parcelas}
                     </p>
                   )}
@@ -131,11 +137,11 @@ const ContasPagar = () => {
               
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-lg font-bold text-green-600">
+                  <p className="text-lg font-bold text-green-700">
                     R$ {despesa.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
                   {despesa.data_pagamento && (
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-green-600">
                       Pago em: {new Date(despesa.data_pagamento).toLocaleDateString('pt-BR')}
                     </p>
                   )}

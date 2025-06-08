@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2, Check } from "lucide-react";
 import { useDespesas } from "@/hooks/useDespesas";
+import TipoTooltip from "./TipoTooltip";
 
 const ListaDespesas = () => {
   const { despesas, isLoading, updateDespesa, deleteDespesa } = useDespesas();
@@ -29,7 +30,10 @@ const ListaDespesas = () => {
   return (
     <Card className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Despesas Cadastradas</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-2xl font-bold">Despesas Cadastradas</h2>
+          <TipoTooltip />
+        </div>
         <div className="text-right">
           <p className="text-sm text-muted-foreground">Total</p>
           <p className="text-xl font-bold text-primary">
@@ -43,12 +47,14 @@ const ListaDespesas = () => {
           <Card key={despesa.id} className={`p-4 border ${despesa.pago ? 'bg-green-50 border-green-200' : 'border-border'}`}>
             <div className="flex justify-between items-start mb-3">
               <div>
-                <h3 className="font-semibold">{despesa.descricao}</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className={`font-semibold ${despesa.pago ? 'text-green-800' : 'text-foreground'}`}>
+                  {despesa.descricao}
+                </h3>
+                <p className={`text-sm ${despesa.pago ? 'text-green-600' : 'text-muted-foreground'}`}>
                   {despesa.categoria?.nome}
                 </p>
                 {despesa.tipo === 'parcelada' && (
-                  <p className="text-xs text-muted-foreground">
+                  <p className={`text-xs ${despesa.pago ? 'text-green-600' : 'text-muted-foreground'}`}>
                     Parcela {despesa.parcela_atual} de {despesa.numero_parcelas}
                     {despesa.valor_total && (
                       <> • Total: R$ {despesa.valor_total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</>
@@ -91,11 +97,11 @@ const ListaDespesas = () => {
             
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-lg font-bold text-primary">
+                <p className={`text-lg font-bold ${despesa.pago ? 'text-green-700' : 'text-primary'}`}>
                   R$ {despesa.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   {despesa.tipo === 'parcelada' && <span className="text-sm font-normal text-muted-foreground"> /parcela</span>}
                 </p>
-                <p className="text-sm text-muted-foreground">
+                <p className={`text-sm ${despesa.pago ? 'text-green-600' : 'text-muted-foreground'}`}>
                   Vencimento: {new Date(despesa.data_vencimento).toLocaleDateString('pt-BR')}
                 </p>
                 {despesa.pago && despesa.data_pagamento && (

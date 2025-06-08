@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useDespesas } from "@/hooks/useDespesas";
 import { useCategorias } from "@/hooks/useCategorias";
+import TipoTooltip from "./TipoTooltip";
 
 const CadastroDespesas = () => {
   const [formData, setFormData] = useState({
@@ -167,7 +167,10 @@ const CadastroDespesas = () => {
         </div>
 
         <div>
-          <Label htmlFor="tipo">Tipo de Despesa *</Label>
+          <div className="flex items-center gap-2 mb-2">
+            <Label htmlFor="tipo">Tipo de Despesa *</Label>
+            <TipoTooltip />
+          </div>
           <Select value={formData.tipo} onValueChange={handleTipoChange}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione o tipo" />
