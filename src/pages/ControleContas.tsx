@@ -115,9 +115,10 @@ const ControleContas = () => {
           </Card>
         </div>
 
-        {/* Navegação de Mês e Botão Gerar Despesas Fixas */}
+        {/* Navegação de Mês e Botão Gerar Despesas Fixas - Layout Responsivo */}
         <Card className="p-4 mb-6">
-          <div className="flex justify-between items-center">
+          {/* Layout Desktop */}
+          <div className="hidden md:flex justify-between items-center">
             <Button
               variant="outline"
               size="sm"
@@ -152,6 +153,51 @@ const ControleContas = () => {
               Próximo Mês
               <ChevronRight className="w-4 h-4 ml-2" />
             </Button>
+          </div>
+
+          {/* Layout Mobile */}
+          <div className="md:hidden space-y-4">
+            {/* Título do mês centralizado */}
+            <div className="text-center">
+              <h3 className="text-lg font-semibold capitalize">
+                {monthName}
+              </h3>
+            </div>
+            
+            {/* Navegação de mês */}
+            <div className="flex justify-between items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateMonth('prev')}
+                className="flex-1"
+              >
+                <ChevronLeft className="w-4 h-4 mr-1" />
+                Anterior
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigateMonth('next')}
+                className="flex-1"
+              >
+                Próximo
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+            
+            {/* Botão Gerar Despesas Fixas */}
+            {temDespesasFixasModelo && (
+              <Button
+                onClick={handleGenerateDespesasFixas}
+                disabled={generateDespesasFixas.isPending}
+                className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700"
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                {generateDespesasFixas.isPending ? 'Gerando...' : 'Gerar Despesas Fixas'}
+              </Button>
+            )}
           </div>
           
           {temDespesasFixasModelo && (

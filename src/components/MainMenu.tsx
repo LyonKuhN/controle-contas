@@ -1,7 +1,11 @@
 
 import { Link } from "react-router-dom";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
 import NavigationIsland from "./NavigationIsland";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 const menuItems = [
   {
@@ -31,14 +35,47 @@ const menuItems = [
 ];
 
 const MainMenu = () => {
+  const { signOut, user } = useAuth();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso."
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao fazer logout",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen">
       {/* Navigation Island */}
       <NavigationIsland />
 
       <div className="container mx-auto px-4">
-        {/* Header with Subtle Title */}
-        <div className="text-center mb-16">
+        {/* Header with Subtle Title and Logout Button */}
+        <div className="text-center mb-16 relative">
+          {user && (
+            <div className="absolute top-0 right-0">
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <LogOut className="w-4 h-4" />
+                Sair
+              </Button>
+            </div>
+          )}
+          
           <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-purple-300 to-purple-500 bg-clip-text text-transparent mb-4">
             Controle Financeiro
           </h1>
