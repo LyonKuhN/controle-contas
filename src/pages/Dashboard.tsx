@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDespesas } from "@/hooks/useDespesas";
 import { useReceitas } from "@/hooks/useReceitas";
 import { useCategorias } from "@/hooks/useCategorias";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const Dashboard = () => {
@@ -18,6 +19,7 @@ const Dashboard = () => {
   const { despesas } = useDespesas();
   const { receitas } = useReceitas();
   const { categorias } = useCategorias();
+  const isMobile = useIsMobile();
 
   // Calcular totais
   const totalDespesas = despesas.reduce((acc, despesa) => acc + Number(despesa.valor), 0);
@@ -60,10 +62,12 @@ const Dashboard = () => {
       <div className="hidden md:block">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-start mb-4">
+            {/* Left side - Support Button */}
             <div className="flex items-center">
               <SupportDialog variant="outline" size="sm" />
             </div>
             
+            {/* Right side - Theme Toggle and Profile */}
             <div className="flex items-center gap-2">
               <ThemeToggle />
               {user && (
@@ -81,12 +85,13 @@ const Dashboard = () => {
             </div>
           </div>
           
+          {/* Navigation Island - Centered */}
           <NavigationIsland />
         </div>
       </div>
 
       {/* Mobile Layout - Top Header */}
-      <div className="block md:hidden">
+      <div className="md:hidden">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-bold text-foreground">📊 Dashboard</h1>
@@ -170,7 +175,7 @@ const Dashboard = () => {
         </div>
 
         {dadosTipos.length > 0 && (
-          <Card className="p-6 mb-20 md:mb-0">
+          <Card className="p-6">
             <h3 className="text-xl font-bold mb-4 text-center">Despesas por Tipo</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={dadosTipos}>

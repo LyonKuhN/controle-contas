@@ -8,6 +8,7 @@ import MobileNavigation from "./MobileNavigation";
 import ThemeToggle from "./ThemeToggle";
 import SupportDialog from "./SupportDialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const menuItems = [
   {
@@ -38,17 +39,20 @@ const menuItems = [
 
 const MainMenu = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen">
       {/* Desktop Layout */}
       <div className="hidden md:block">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-start mb-4">
+            {/* Left side - Support Button */}
             <div className="flex items-center">
               <SupportDialog variant="outline" size="sm" />
             </div>
             
+            {/* Right side - Theme Toggle and Profile */}
             <div className="flex items-center gap-2">
               <ThemeToggle />
               {user && (
@@ -56,7 +60,7 @@ const MainMenu = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="nav-island flex items-center gap-2 bg-background/80 border-border text-foreground hover:bg-accent hover:text-accent-foreground"
+                    className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-foreground hover:bg-primary/10"
                   >
                     <User className="w-4 h-4" />
                     <span className="hidden sm:inline">Perfil</span>
@@ -66,12 +70,13 @@ const MainMenu = () => {
             </div>
           </div>
           
+          {/* Navigation Island - Centered */}
           <NavigationIsland />
         </div>
       </div>
 
-      {/* Mobile Layout - Top Header Only */}
-      <div className="block md:hidden">
+      {/* Mobile Layout - Top Header */}
+      <div className="md:hidden">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-bold text-foreground">LYONPAY</h1>
@@ -80,8 +85,8 @@ const MainMenu = () => {
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="container mx-auto px-4 pb-6 md:pb-0">
+      <div className="container mx-auto px-4 pb-24 md:pb-0">
+        {/* Header with Subtle Title */}
         <div className="text-center mb-16">
           <div className="flex items-center justify-center gap-4 mb-6">
             <img 
@@ -93,29 +98,30 @@ const MainMenu = () => {
               LYONPAY
             </h1>
           </div>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-white/60 max-w-2xl mx-auto">
             Gerencie suas finanças pessoais de forma simples e eficiente
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto mb-20 md:mb-0">
+        {/* Menu Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
           {menuItems.map((item, index) => (
             <Link key={item.path} to={item.path} className="group">
               <Card 
-                className="menu-card-hover p-8 h-80 flex flex-col justify-between cursor-pointer bg-card text-card-foreground border-border hover:border-primary/50"
+                className="menu-card-hover p-8 h-80 flex flex-col justify-between cursor-pointer"
                 style={{
                   animationDelay: `${index * 100}ms`
                 }}
               >
                 <div className="space-y-4">
                   <div className="text-4xl mb-4">{item.icon}</div>
-                  <h3 className="text-2xl font-bold menu-text text-card-foreground">{item.title}</h3>
+                  <h3 className="text-2xl font-bold menu-text text-foreground">{item.title}</h3>
                   <p className="text-sm leading-relaxed menu-description text-muted-foreground">
                     {item.description}
                   </p>
                 </div>
                 <div className="mt-8">
-                  <span className="text-sm font-medium menu-text text-primary group-hover:text-primary transition-colors duration-500">
+                  <span className="text-sm font-medium menu-text text-primary group-hover:text-white transition-colors duration-500">
                     Explorar →
                   </span>
                 </div>
@@ -125,7 +131,7 @@ const MainMenu = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation - Always render */}
+      {/* Mobile Navigation */}
       <MobileNavigation />
     </div>
   );
