@@ -121,9 +121,31 @@ const Auth = () => {
     return true;
   };
 
-  const getAuthErrorMessage = (error: any): string => {
+  const getAuthErrorMessage = (error: any, isSignUp: boolean = false): string => {
     const errorMessage = error?.message || '';
     
+    // Mensagens específicas para cadastro
+    if (isSignUp) {
+      if (errorMessage.includes('User already registered')) {
+        return 'Este email já está cadastrado. Tente fazer login ou use outro email.';
+      }
+      
+      if (errorMessage.includes('signup_disabled')) {
+        return 'Cadastro temporariamente desabilitado. Tente novamente mais tarde.';
+      }
+      
+      if (errorMessage.includes('weak_password') || errorMessage.includes('password')) {
+        return 'A senha deve ter pelo menos 6 caracteres e ser mais forte.';
+      }
+      
+      if (errorMessage.includes('email')) {
+        return 'Email inválido. Verifique o formato do email.';
+      }
+      
+      return 'Erro ao criar conta. Verifique os dados e tente novamente.';
+    }
+    
+    // Mensagens específicas para login
     if (errorMessage.includes('Invalid login credentials') || errorMessage.includes('invalid_credentials')) {
       return 'Email ou senha incorretos. Verifique suas credenciais e tente novamente.';
     }
@@ -134,18 +156,6 @@ const Auth = () => {
     
     if (errorMessage.includes('too_many_requests')) {
       return 'Muitas tentativas de login. Aguarde alguns minutos antes de tentar novamente.';
-    }
-    
-    if (errorMessage.includes('signup_disabled')) {
-      return 'Cadastro temporariamente desabilitado. Tente novamente mais tarde.';
-    }
-    
-    if (errorMessage.includes('weak_password') || errorMessage.includes('password')) {
-      return 'A senha deve ter pelo menos 6 caracteres e ser mais forte.';
-    }
-    
-    if (errorMessage.includes('email')) {
-      return 'Email inválido ou já está em uso.';
     }
     
     return 'Ocorreu um erro inesperado. Tente novamente.';
@@ -165,6 +175,7 @@ const Auth = () => {
     setIsLoading(true);
     try {
       if (mode === 'login') {
+        console.log('Tentando fazer login...');
         const { error } = await signIn(email, password);
         
         if (error) {
@@ -176,9 +187,11 @@ const Auth = () => {
           description: "Redirecionando para o painel...",
         });
       } else {
+        console.log('Tentando criar conta...');
         const { error } = await signUp(email, password);
         
         if (error) {
+          console.error('Erro no signup:', error);
           throw error;
         }
         
@@ -193,7 +206,7 @@ const Auth = () => {
       }
     } catch (error: any) {
       console.error('Auth error:', error);
-      const friendlyMessage = getAuthErrorMessage(error);
+      const friendlyMessage = getAuthErrorMessage(error, mode === 'signup');
       
       toast({
         variant: "destructive",
@@ -227,7 +240,7 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <Tabs defaultValue={mode} className="w-full">
+            <Tabs value={mode} className="w-full">
               <TabsList>
                 <TabsTrigger value="login" onClick={() => setMode('login')}>
                   Login
