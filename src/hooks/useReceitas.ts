@@ -47,11 +47,18 @@ export const useReceitas = () => {
   const createReceita = useMutation({
     mutationFn: async (receita: Omit<Receita, 'id' | 'categoria'>) => {
       console.log('Criando receita:', receita);
+      
+      // Obter o usuário autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
       const { data, error } = await supabase
         .from('receitas')
         .insert([{
           ...receita,
-          user_id: (await supabase.auth.getUser()).data.user?.id
+          user_id: user.id
         }])
         .select()
         .single();

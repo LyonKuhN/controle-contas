@@ -52,10 +52,16 @@ export const useDespesas = () => {
     mutationFn: async (despesa: Omit<Despesa, 'id' | 'categoria'>) => {
       console.log('Criando despesa:', despesa);
       
+      // Obter o usuário autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
       // Para despesas fixas, marcar como modelo apenas se is_modelo for explicitamente true
       const despesaData = {
         ...despesa,
-        user_id: (await supabase.auth.getUser()).data.user?.id,
+        user_id: user.id,
         is_modelo: despesa.tipo === 'fixa' && despesa.is_modelo === true
       };
 
@@ -107,12 +113,19 @@ export const useDespesas = () => {
     mutationFn: async (targetDate: Date) => {
       console.log('Gerando despesas fixas para:', targetDate.toLocaleDateString('pt-BR'));
       
-      // Buscar todas as despesas fixas modelo
+      // Obter o usuário autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      // Buscar todas as despesas fixas modelo do usuário
       const { data: todasDespesasFixas, error: fetchError } = await supabase
         .from('despesas')
         .select('*')
         .eq('tipo', 'fixa')
-        .eq('is_modelo', true) // Apenas despesas modelo
+        .eq('is_modelo', true)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: true });
 
       if (fetchError) {
@@ -139,7 +152,8 @@ export const useDespesas = () => {
         .from('despesas')
         .select('descricao, categoria_id, data_vencimento')
         .eq('tipo', 'fixa')
-        .eq('is_modelo', false) // Apenas despesas não modelo
+        .eq('is_modelo', false)
+        .eq('user_id', user.id)
         .gte('data_vencimento', inicioMesStr)
         .lte('data_vencimento', fimMesStr);
 
@@ -200,9 +214,9 @@ export const useDespesas = () => {
             data_vencimento: dataVencimentoFormatada,
             tipo: 'fixa',
             observacoes: modelo.observacoes,
-            user_id: modelo.user_id,
+            user_id: user.id,
             pago: false,
-            is_modelo: false // Marcar como não modelo
+            is_modelo: false
           }])
           .select()
           .single();
