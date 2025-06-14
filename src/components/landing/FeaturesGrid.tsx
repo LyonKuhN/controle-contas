@@ -32,13 +32,13 @@ const FeaturesGrid = () => {
         {features.map((feature, index) => (
           <Card 
             key={index}
-            className="p-8 text-center hover:scale-105 transition-all duration-300 border-primary/20 hover:border-primary/40 bg-card/50 backdrop-blur"
+            className="p-8 text-center hover:scale-105 transition-all duration-300 border-primary/20 hover:border-primary/40 bg-card/50 dark:bg-card/50 light:bg-white/80 backdrop-blur"
           >
             <div className="text-primary mb-4 flex justify-center">
               {feature.icon}
             </div>
-            <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
-            <p className="text-muted-foreground leading-relaxed">
+            <h3 className="text-xl font-bold mb-3 text-white dark:text-white light:text-gray-800">{feature.title}</h3>
+            <p className="text-muted-foreground dark:text-gray-300 light:text-gray-600 leading-relaxed">
               {feature.description}
             </p>
           </Card>

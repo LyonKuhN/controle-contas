@@ -8,7 +8,7 @@ const HeroSection = () => {
     <div className="container mx-auto px-4 py-16">
       <div className="text-center mb-20">
         {/* Badge de Oferta */}
-        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/30 to-accent/30 text-white border-2 border-primary/50 px-6 py-3 rounded-full mb-8 backdrop-blur-sm">
+        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/30 to-accent/30 text-white dark:text-white light:text-black border-2 border-primary/50 px-6 py-3 rounded-full mb-8 backdrop-blur-sm">
           <Star className="w-4 h-4" />
           <span className="text-sm font-bold">🎉 3 DIAS GRÁTIS - Sem cartão de crédito</span>
         </div>
@@ -16,7 +16,7 @@ const HeroSection = () => {
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-6 leading-tight">
           Controle Total das Suas Finanças
         </h1>
-        <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed max-w-4xl mx-auto">
+        <p className="text-lg md:text-xl text-gray-200 dark:text-gray-200 light:text-gray-800 mb-8 leading-relaxed max-w-4xl mx-auto">
           A ferramenta mais completa para gerenciar seus gastos, receitas e investimentos. 
           <span className="text-primary font-bold"> Experimente grátis por 3 dias</span> e descubra como é fácil ter controle total do seu dinheiro.
         </p>
@@ -30,7 +30,7 @@ const HeroSection = () => {
           </Link>
         </div>
         
-        <p className="text-sm text-gray-300 font-medium">
+        <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-600 font-medium">
           ✓ Sem compromisso • ✓ Cancele a qualquer momento
         </p>
       </div>
@@ -38,22 +38,22 @@ const HeroSection = () => {
       {/* Preview do Sistema */}
       <div className="relative">
         <div className="bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl p-8 border-2 border-primary/30 backdrop-blur-sm">
-          <h3 className="text-2xl md:text-3xl font-bold mb-6 text-white text-center">Veja como é simples:</h3>
+          <h3 className="text-2xl md:text-3xl font-bold mb-6 text-white dark:text-white light:text-gray-800 text-center">Veja como é simples:</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-black/30 backdrop-blur rounded-lg p-6 border border-primary/20 hover:border-primary/40 transition-all duration-300">
+            <div className="bg-black/30 dark:bg-black/30 light:bg-white/80 backdrop-blur rounded-lg p-6 border border-primary/20 hover:border-primary/40 transition-all duration-300">
               <div className="text-4xl mb-4 text-center">📊</div>
-              <h4 className="font-bold mb-3 text-white text-lg text-center">Dashboard Inteligente</h4>
-              <p className="text-sm text-gray-300 text-center">Gráficos em tempo real dos seus gastos com análises detalhadas</p>
+              <h4 className="font-bold mb-3 text-white dark:text-white light:text-gray-800 text-lg text-center">Dashboard Inteligente</h4>
+              <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-600 text-center">Gráficos em tempo real dos seus gastos com análises detalhadas</p>
             </div>
-            <div className="bg-black/30 backdrop-blur rounded-lg p-6 border border-primary/20 hover:border-primary/40 transition-all duration-300">
+            <div className="bg-black/30 dark:bg-black/30 light:bg-white/80 backdrop-blur rounded-lg p-6 border border-primary/20 hover:border-primary/40 transition-all duration-300">
               <div className="text-4xl mb-4 text-center">💸</div>
-              <h4 className="font-bold mb-3 text-white text-lg text-center">Controle de Despesas</h4>
-              <p className="text-sm text-gray-300 text-center">Categorização automática e inteligente de todos os gastos</p>
+              <h4 className="font-bold mb-3 text-white dark:text-white light:text-gray-800 text-lg text-center">Controle de Despesas</h4>
+              <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-600 text-center">Categorização automática e inteligente de todos os gastos</p>
             </div>
-            <div className="bg-black/30 backdrop-blur rounded-lg p-6 border border-primary/20 hover:border-primary/40 transition-all duration-300">
+            <div className="bg-black/30 dark:bg-black/30 light:bg-white/80 backdrop-blur rounded-lg p-6 border border-primary/20 hover:border-primary/40 transition-all duration-300">
               <div className="text-4xl mb-4 text-center">📋</div>
-              <h4 className="font-bold mb-3 text-white text-lg text-center">Relatórios Detalhados</h4>
-              <p className="text-sm text-gray-300 text-center">Análises completas e exportáveis do seu dinheiro</p>
+              <h4 className="font-bold mb-3 text-white dark:text-white light:text-gray-800 text-lg text-center">Relatórios Detalhados</h4>
+              <p className="text-sm text-gray-300 dark:text-gray-300 light:text-gray-600 text-center">Análises completas e exportáveis do seu dinheiro</p>
             </div>
           </div>
         </div>

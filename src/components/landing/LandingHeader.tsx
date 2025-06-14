@@ -23,7 +23,7 @@ const LandingHeader = () => {
           <Link to="/auth?mode=login">
             <Button 
               variant="outline" 
-              className="border-2 border-white/80 text-white bg-black/20 backdrop-blur-sm hover:bg-white hover:text-black transition-all duration-300 font-semibold"
+              className="border-2 border-white/80 dark:border-white/80 light:border-gray-800 text-white dark:text-white light:text-gray-800 bg-black/20 dark:bg-black/20 light:bg-white/80 backdrop-blur-sm hover:bg-white hover:text-black dark:hover:bg-white dark:hover:text-black light:hover:bg-gray-800 light:hover:text-white transition-all duration-300 font-semibold"
             >
               Login
             </Button>
