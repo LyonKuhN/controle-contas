@@ -39,7 +39,7 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
 
     if (!user && !userEmail.trim()) {
       toast({
-        title: "Erro",
+        title: "Erro", 
         description: "Por favor, informe seu email para contato.",
         variant: "destructive"
       });
@@ -49,6 +49,7 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
     const emailToUse = user?.email || userEmail;
 
     setIsLoading(true);
+    console.log("Iniciando envio de email de suporte...");
     
     try {
       const { data, error } = await supabase.functions.invoke('send-support-email', {
@@ -60,13 +61,16 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
         }
       });
 
+      console.log("Resposta da função:", data);
+      console.log("Erro da função:", error);
+
       if (error) {
         throw error;
       }
 
       toast({
         title: "Email de suporte enviado!",
-        description: "Recebemos sua mensagem e responderemos em breve através do email adm@lyonpay.com.",
+        description: `Recebemos sua mensagem e responderemos em breve através do email ${emailToUse}. Nosso email de suporte é adm@lyonpay.com.`,
       });
       
       setSubject('');
@@ -74,10 +78,10 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
       setUserEmail('');
       setIsOpen(false);
     } catch (error: any) {
-      console.error('Error sending support email:', error);
+      console.error('Erro ao enviar email de suporte:', error);
       toast({
         title: "Erro",
-        description: "Erro ao enviar email de suporte. Tente novamente.",
+        description: `Erro ao enviar email de suporte: ${error.message || 'Tente novamente.'}`,
         variant: "destructive"
       });
     } finally {

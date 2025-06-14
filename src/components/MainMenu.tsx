@@ -8,7 +8,6 @@ import MobileNavigation from "./MobileNavigation";
 import ThemeToggle from "./ThemeToggle";
 import SupportDialog from "./SupportDialog";
 import { useAuth } from "@/hooks/useAuth";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 const menuItems = [
   {
@@ -39,7 +38,6 @@ const menuItems = [
 
 const MainMenu = () => {
   const { user } = useAuth();
-  const isMobile = useIsMobile();
 
   return (
     <div className="min-h-screen">
@@ -47,12 +45,10 @@ const MainMenu = () => {
       <div className="hidden md:block">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-start mb-4">
-            {/* Left side - Support Button */}
             <div className="flex items-center">
               <SupportDialog variant="outline" size="sm" />
             </div>
             
-            {/* Right side - Theme Toggle and Profile */}
             <div className="flex items-center gap-2">
               <ThemeToggle />
               {user && (
@@ -70,13 +66,12 @@ const MainMenu = () => {
             </div>
           </div>
           
-          {/* Navigation Island - Centered */}
           <NavigationIsland />
         </div>
       </div>
 
-      {/* Mobile Layout - Top Header */}
-      <div className="md:hidden">
+      {/* Mobile Layout - Top Header Only */}
+      <div className="block md:hidden">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-bold text-foreground">LYONPAY</h1>
@@ -85,8 +80,8 @@ const MainMenu = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 pb-24 md:pb-0">
-        {/* Header with Subtle Title */}
+      {/* Main Content */}
+      <div className="container mx-auto px-4 pb-6 md:pb-0">
         <div className="text-center mb-16">
           <div className="flex items-center justify-center gap-4 mb-6">
             <img 
@@ -103,8 +98,7 @@ const MainMenu = () => {
           </p>
         </div>
 
-        {/* Menu Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto mb-20 md:mb-0">
           {menuItems.map((item, index) => (
             <Link key={item.path} to={item.path} className="group">
               <Card 
@@ -131,7 +125,7 @@ const MainMenu = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation */}
+      {/* Mobile Navigation - Always render */}
       <MobileNavigation />
     </div>
   );
