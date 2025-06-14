@@ -53,7 +53,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -67,10 +68,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
         }
         
-        // Check subscription when user signs in
-        if (session?.user && event === 'SIGNED_IN') {
-          setTimeout(() => {
-            checkSubscription();
+        // Verificar assinatura automaticamente em qualquer evento de login
+        if (session?.user && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED')) {
+          console.log('Verificando assinatura automaticamente...');
+          setTimeout(async () => {
+            try {
+              const { data, error } = await supabase.functions.invoke('check-subscription', {
+                headers: {
+                  Authorization: `Bearer ${session.access_token}`,
+                },
+              });
+              
+              if (error) {
+                console.error('Error checking subscription:', error);
+                return;
+              }
+              
+              console.log('Dados da assinatura atualizados:', data);
+              setSubscriptionData(data);
+            } catch (error) {
+              console.error('Error checking subscription:', error);
+            }
           }, 1000);
         }
         
@@ -82,7 +100,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
     );
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    // Verificar sessão existente e assinatura
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      console.log('Sessão inicial:', session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -96,10 +116,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
       }
       
-      // Check subscription for existing session
+      // Verificar assinatura para sessão existente
       if (session?.user) {
-        setTimeout(() => {
-          checkSubscription();
+        console.log('Verificando assinatura para sessão existente...');
+        setTimeout(async () => {
+          try {
+            const { data, error } = await supabase.functions.invoke('check-subscription', {
+              headers: {
+                Authorization: `Bearer ${session.access_token}`,
+              },
+            });
+            
+            if (error) {
+              console.error('Error checking subscription:', error);
+              return;
+            }
+            
+            console.log('Dados da assinatura carregados:', data);
+            setSubscriptionData(data);
+          } catch (error) {
+            console.error('Error checking subscription:', error);
+          }
         }, 1000);
       }
     });

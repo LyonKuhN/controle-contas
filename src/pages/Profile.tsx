@@ -10,9 +10,10 @@ import { Navigate } from 'react-router-dom';
 import { LogOut, User, Key, ArrowLeft, Clock, Crown, CreditCard, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import SubscriptionDialog from '@/components/SubscriptionDialog';
 
 const Profile = () => {
-  const { user, signOut, subscriptionData, checkSubscription, session, userName } = useAuth();
+  const { user, signOut, subscriptionData, session, userName } = useAuth();
   const { priceData } = useStripePrice();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -21,6 +22,7 @@ const Profile = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
   const [isTrialActive, setIsTrialActive] = useState(true);
+  const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -148,55 +150,6 @@ const Profile = () => {
     }
   };
 
-  const handleManageSubscription = async () => {
-    if (!session) return;
-    
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('customer-portal', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Error opening customer portal:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao abrir portal do cliente. Tente novamente.",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleRefreshSubscription = async () => {
-    setLoading(true);
-    try {
-      await checkSubscription();
-      toast({
-        title: "Status atualizado",
-        description: "Status da assinatura foi verificado e atualizado."
-      });
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao verificar status da assinatura",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const displayPrice = priceData?.formatted || 'R$ 29,90';
 
   return (
@@ -226,15 +179,6 @@ const Profile = () => {
             <div className="flex items-center gap-3 mb-4">
               <Clock className="w-5 h-5 text-primary" />
               <h2 className="text-xl font-semibold">Status da Assinatura</h2>
-              <Button 
-                onClick={handleRefreshSubscription}
-                disabled={loading}
-                variant="outline"
-                size="sm"
-                className="ml-auto"
-              >
-                Atualizar Status
-              </Button>
             </div>
             
             {subscriptionData?.subscribed ? (
@@ -252,13 +196,13 @@ const Profile = () => {
                 </div>
                 
                 <Button 
-                  onClick={handleManageSubscription}
+                  onClick={() => setShowSubscriptionDialog(true)}
                   disabled={loading}
                   className="w-full"
                   variant="outline"
                 >
                   <Settings className="w-4 h-4 mr-2" />
-                  {loading ? 'Carregando...' : 'Gerenciar Assinatura'}
+                  Gerenciar Assinatura
                 </Button>
               </div>
             ) : isTrialActive ? (
@@ -417,6 +361,12 @@ const Profile = () => {
           </Card>
         </div>
       </div>
+
+      {/* Subscription Dialog */}
+      <SubscriptionDialog 
+        isOpen={showSubscriptionDialog} 
+        onClose={() => setShowSubscriptionDialog(false)} 
+      />
     </div>
   );
 };

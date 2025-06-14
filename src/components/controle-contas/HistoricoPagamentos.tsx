@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -58,12 +59,36 @@ const HistoricoPagamentos = () => {
   if (despesasFiltradas.length > 0) {
     if (filtros.categoria && filtros.categoria.trim() !== "" && filtros.categoria !== "todas") {
       despesasFiltradas = despesasFiltradas.filter(despesa => {
-        // Fix: Check if categoria exists and has id property, otherwise use nome for comparison
-        if (despesa.categoria && 'id' in despesa.categoria) {
-          return despesa.categoria.id === filtros.categoria;
-        } else if (despesa.categoria && 'nome' in despesa.categoria) {
-          return despesa.categoria.nome === filtros.categoria;
+        console.log('Filtrando categoria - despesa.categoria:', despesa.categoria, 'filtros.categoria:', filtros.categoria);
+        
+        // Verificar se a categoria da despesa existe
+        if (!despesa.categoria) {
+          console.log('Despesa sem categoria, excluída');
+          return false;
         }
+        
+        // Se a categoria tem um ID, comparar com o ID
+        if (typeof despesa.categoria === 'object' && despesa.categoria.id) {
+          const match = despesa.categoria.id === filtros.categoria;
+          console.log('Comparando IDs:', despesa.categoria.id, '===', filtros.categoria, '=', match);
+          return match;
+        }
+        
+        // Se a categoria tem um nome, comparar com o nome
+        if (typeof despesa.categoria === 'object' && despesa.categoria.nome) {
+          const match = despesa.categoria.nome === filtros.categoria;
+          console.log('Comparando nomes:', despesa.categoria.nome, '===', filtros.categoria, '=', match);
+          return match;
+        }
+        
+        // Se a categoria é uma string, comparar diretamente
+        if (typeof despesa.categoria === 'string') {
+          const match = despesa.categoria === filtros.categoria;
+          console.log('Comparando strings:', despesa.categoria, '===', filtros.categoria, '=', match);
+          return match;
+        }
+        
+        console.log('Categoria não reconhecida, excluída');
         return false;
       });
     }
@@ -156,7 +181,10 @@ const HistoricoPagamentos = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium mb-1 block">Categoria</label>
-              <Select value={filtros.categoria} onValueChange={(value) => setFiltros({...filtros, categoria: value})}>
+              <Select value={filtros.categoria} onValueChange={(value) => {
+                console.log('Categoria selecionada:', value);
+                setFiltros({...filtros, categoria: value});
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Todas as categorias" />
                 </SelectTrigger>
@@ -164,8 +192,8 @@ const HistoricoPagamentos = () => {
                   <SelectItem value="todas">Todas as categorias</SelectItem>
                   {categorias.map((categoria) => (
                     <SelectItem 
-                      key={categoria.id || categoria.nome} 
-                      value={categoria.id || categoria.nome}
+                      key={categoria.id} 
+                      value={categoria.id}
                     >
                       {categoria.nome}
                     </SelectItem>
@@ -174,7 +202,6 @@ const HistoricoPagamentos = () => {
               </Select>
             </div>
 
-            
             <div>
               <label className="text-sm font-medium mb-1 block">Tipo</label>
               <Select value={filtros.tipo} onValueChange={(value) => setFiltros({...filtros, tipo: value})}>
@@ -223,7 +250,6 @@ const HistoricoPagamentos = () => {
         )}
       </Card>
 
-      
       <Card className="p-6">
         <div className="text-center">
           <h3 className="text-lg font-medium mb-2">Total Filtrado</h3>
