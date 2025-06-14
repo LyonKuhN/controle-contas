@@ -18,16 +18,9 @@ export const useCategorias = (tipo?: 'despesa' | 'receita') => {
   const { data: categorias = [], isLoading } = useQuery({
     queryKey: ['categorias', tipo],
     queryFn: async () => {
-      // Primeiro verifica se o usuário está autenticado
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        throw new Error('Usuário não autenticado');
-      }
-
       let query = supabase
         .from('categorias')
-        .select('*')
-        .or(`user_id.eq.${user.id},user_id.is.null`); // Busca categorias do usuário OU categorias padrão (user_id = NULL)
+        .select('*');
       
       if (tipo) {
         query = query.eq('tipo', tipo);
@@ -40,7 +33,7 @@ export const useCategorias = (tipo?: 'despesa' | 'receita') => {
         throw error;
       }
       
-      console.log('Categorias carregadas para o usuário:', user.id, data);
+      console.log('Categorias carregadas:', data);
       return data as Categoria[];
     }
   });
