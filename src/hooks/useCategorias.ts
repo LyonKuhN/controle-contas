@@ -1,15 +1,20 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export interface Categoria {
   id: string;
   nome: string;
   tipo: 'despesa' | 'receita';
   cor: string;
+  user_id?: string;
 }
 
 export const useCategorias = (tipo?: 'despesa' | 'receita') => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const { data: categorias = [], isLoading } = useQuery({
     queryKey: ['categorias', tipo],
     queryFn: async () => {
@@ -26,8 +31,35 @@ export const useCategorias = (tipo?: 'despesa' | 'receita') => {
     }
   });
 
+  const deleteCategoria = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('categorias')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['categorias'] });
+      toast({
+        title: "Sucesso",
+        description: "Categoria removida com sucesso!"
+      });
+    },
+    onError: (error) => {
+      console.error('Erro ao deletar categoria:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao remover categoria",
+        variant: "destructive"
+      });
+    }
+  });
+
   return {
     categorias,
-    isLoading
+    isLoading,
+    deleteCategoria
   };
 };

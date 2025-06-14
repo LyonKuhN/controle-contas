@@ -16,23 +16,26 @@ const ControleContas = () => {
   const { despesas, generateDespesasFixas } = useDespesas();
   const { receitas } = useReceitas();
 
-  // Calcular saldo real baseado nas receitas recebidas e despesas pagas
+  // Calcular saldo real baseado nas receitas recebidas e despesas pagas (excluindo modelos)
   const totalReceitasRecebidas = receitas
     .filter(receita => receita.recebido)
     .reduce((total, receita) => total + receita.valor, 0);
 
   const totalDespesasPagas = despesas
-    .filter(despesa => despesa.pago)
+    .filter(despesa => despesa.pago && !despesa.is_modelo) // Excluir despesas modelo
     .reduce((total, despesa) => total + despesa.valor, 0);
 
   const saldoAtual = totalReceitasRecebidas - totalDespesasPagas;
 
-  // Filtrar despesas do mês selecionado e atrasadas
+  // Filtrar despesas do mês selecionado e atrasadas (excluindo modelos)
   const hoje = new Date();
   const inicioMesAtual = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
   const fimMesAtual = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
 
   const despesasDoMes = despesas.filter(despesa => {
+    // Excluir despesas modelo dos cálculos
+    if (despesa.is_modelo) return false;
+    
     const dataVencimento = new Date(despesa.data_vencimento);
     const isCurrentMonth = dataVencimento >= inicioMesAtual && dataVencimento <= fimMesAtual;
     const isOverdue = dataVencimento < hoje && !despesa.pago && currentDate.getTime() === new Date(hoje.getFullYear(), hoje.getMonth(), 1).getTime();
@@ -48,7 +51,7 @@ const ControleContas = () => {
   const valorContasPendentes = contasAPagar.reduce((total, despesa) => total + despesa.valor, 0);
 
   // Verificar se existem despesas fixas modelo
-  const temDespesasFixasModelo = despesas.some(despesa => despesa.tipo === 'fixa');
+  const temDespesasFixasModelo = despesas.some(despesa => despesa.tipo === 'fixa' && despesa.is_modelo);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(prev => {

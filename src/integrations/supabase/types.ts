@@ -16,6 +16,7 @@ export type Database = {
           id: string
           nome: string
           tipo: string
+          user_id: string | null
         }
         Insert: {
           cor?: string | null
@@ -23,6 +24,7 @@ export type Database = {
           id?: string
           nome: string
           tipo: string
+          user_id?: string | null
         }
         Update: {
           cor?: string | null
@@ -30,6 +32,7 @@ export type Database = {
           id?: string
           nome?: string
           tipo?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -83,6 +86,7 @@ export type Database = {
           data_vencimento: string
           descricao: string
           id: string
+          is_modelo: boolean | null
           numero_parcelas: number | null
           observacoes: string | null
           pago: boolean | null
@@ -100,6 +104,7 @@ export type Database = {
           data_vencimento: string
           descricao: string
           id?: string
+          is_modelo?: boolean | null
           numero_parcelas?: number | null
           observacoes?: string | null
           pago?: boolean | null
@@ -117,6 +122,7 @@ export type Database = {
           data_vencimento?: string
           descricao?: string
           id?: string
+          is_modelo?: boolean | null
           numero_parcelas?: number | null
           observacoes?: string | null
           pago?: boolean | null

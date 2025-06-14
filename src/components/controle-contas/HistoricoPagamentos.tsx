@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDespesas } from "@/hooks/useDespesas";
 import { useCategorias } from "@/hooks/useCategorias";
-import { Filter, X } from "lucide-react";
+import { Filter, X, Plus } from "lucide-react";
+import AddCategoriaDialog from "@/components/categorias/AddCategoriaDialog";
 
 const HistoricoPagamentos = () => {
   const { despesas, isLoading } = useDespesas();
@@ -19,6 +20,7 @@ const HistoricoPagamentos = () => {
     valorMax: ""
   });
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
+  const [showAddCategoria, setShowAddCategoria] = useState(false);
 
   console.log('HistoricoPagamentos - despesas:', despesas);
   console.log('HistoricoPagamentos - filtros:', filtros);
@@ -32,7 +34,6 @@ const HistoricoPagamentos = () => {
     );
   }
 
-  // Verificar se despesas existe e é um array
   if (!Array.isArray(despesas)) {
     console.error('Despesas não é um array:', despesas);
     return (
@@ -42,7 +43,7 @@ const HistoricoPagamentos = () => {
     );
   }
 
-  // Filtrar apenas despesas pagas dos últimos 3 meses
+  // Filtrar apenas despesas pagas dos últimos 3 meses (excluindo modelos)
   const hoje = new Date();
   const tresMesesAtras = new Date(hoje.getFullYear(), hoje.getMonth() - 3, 1);
   
@@ -50,6 +51,7 @@ const HistoricoPagamentos = () => {
     if (!despesa) return false;
     return despesa.pago && 
            despesa.data_pagamento && 
+           !despesa.is_modelo && // Excluir despesas modelo
            new Date(despesa.data_pagamento) >= tresMesesAtras;
   });
 
@@ -59,38 +61,8 @@ const HistoricoPagamentos = () => {
   if (despesasFiltradas.length > 0) {
     if (filtros.categoria && filtros.categoria.trim() !== "" && filtros.categoria !== "todas") {
       despesasFiltradas = despesasFiltradas.filter(despesa => {
-        console.log('Filtrando categoria - despesa.categoria:', despesa.categoria, 'filtros.categoria:', filtros.categoria);
-        
-        // Verificar se a categoria da despesa existe
-        if (!despesa.categoria) {
-          console.log('Despesa sem categoria, excluída');
-          return false;
-        }
-        
-        // Verificar se a categoria tem um ID (usando type assertion segura)
-        const categoria = despesa.categoria as any;
-        if (categoria && typeof categoria === 'object' && 'id' in categoria) {
-          const match = categoria.id === filtros.categoria;
-          console.log('Comparando IDs:', categoria.id, '===', filtros.categoria, '=', match);
-          return match;
-        }
-        
-        // Se a categoria tem um nome, comparar com o nome
-        if (typeof categoria === 'object' && 'nome' in categoria) {
-          const match = categoria.nome === filtros.categoria;
-          console.log('Comparando nomes:', categoria.nome, '===', filtros.categoria, '=', match);
-          return match;
-        }
-        
-        // Se a categoria é uma string, comparar diretamente
-        if (typeof categoria === 'string') {
-          const match = categoria === filtros.categoria;
-          console.log('Comparando strings:', categoria, '===', filtros.categoria, '=', match);
-          return match;
-        }
-        
-        console.log('Categoria não reconhecida, excluída');
-        return false;
+        console.log('Filtrando categoria - despesa.categoria_id:', despesa.categoria_id, 'filtros.categoria:', filtros.categoria);
+        return despesa.categoria_id === filtros.categoria;
       });
     }
 
@@ -182,25 +154,35 @@ const HistoricoPagamentos = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium mb-1 block">Categoria</label>
-              <Select value={filtros.categoria} onValueChange={(value) => {
-                console.log('Categoria selecionada:', value);
-                setFiltros({...filtros, categoria: value});
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Todas as categorias" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="todas">Todas as categorias</SelectItem>
-                  {categorias.map((categoria) => (
-                    <SelectItem 
-                      key={categoria.id} 
-                      value={categoria.id}
-                    >
-                      {categoria.nome}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex gap-2">
+                <Select value={filtros.categoria} onValueChange={(value) => {
+                  console.log('Categoria selecionada:', value);
+                  setFiltros({...filtros, categoria: value});
+                }}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Todas as categorias" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todas">Todas as categorias</SelectItem>
+                    {categorias.map((categoria) => (
+                      <SelectItem 
+                        key={categoria.id} 
+                        value={categoria.id}
+                      >
+                        {categoria.nome}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowAddCategoria(true)}
+                  className="px-2"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
             <div>
@@ -251,6 +233,7 @@ const HistoricoPagamentos = () => {
         )}
       </Card>
 
+      {/* Resumo Total */}
       <Card className="p-6">
         <div className="text-center">
           <h3 className="text-lg font-medium mb-2">Total Filtrado</h3>
@@ -263,6 +246,7 @@ const HistoricoPagamentos = () => {
         </div>
       </Card>
 
+      {/* Lista de Pagamentos */}
       <div>
         <h2 className="text-2xl font-bold mb-4">Histórico de Pagamentos</h2>
         <div className="space-y-4">
@@ -315,6 +299,13 @@ const HistoricoPagamentos = () => {
           )}
         </div>
       </div>
+
+      {/* Dialog para adicionar categoria */}
+      <AddCategoriaDialog
+        open={showAddCategoria}
+        onClose={() => setShowAddCategoria(false)}
+        tipo="despesa"
+      />
     </div>
   );
 };

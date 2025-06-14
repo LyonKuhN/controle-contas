@@ -16,6 +16,7 @@ export interface Despesa {
   numero_parcelas?: number;
   valor_total?: number;
   parcela_atual?: number;
+  is_modelo?: boolean;
   categoria?: {
     nome: string;
     cor: string;
@@ -101,11 +102,12 @@ export const useDespesas = () => {
     mutationFn: async (targetDate: Date) => {
       console.log('Gerando despesas fixas para:', targetDate.toLocaleDateString('pt-BR'));
       
-      // Buscar todas as despesas fixas
+      // Buscar todas as despesas fixas modelo
       const { data: todasDespesasFixas, error: fetchError } = await supabase
         .from('despesas')
         .select('*')
         .eq('tipo', 'fixa')
+        .eq('is_modelo', true) // Apenas despesas modelo
         .order('created_at', { ascending: true });
 
       if (fetchError) {
@@ -114,30 +116,10 @@ export const useDespesas = () => {
       }
 
       if (!todasDespesasFixas || todasDespesasFixas.length === 0) {
-        throw new Error('Nenhuma despesa fixa encontrada');
+        throw new Error('Nenhuma despesa fixa modelo encontrada');
       }
 
-      console.log('Todas as despesas fixas encontradas:', todasDespesasFixas);
-
-      // Identificar despesas modelo (as mais antigas de cada descrição+categoria)
-      // Uma despesa modelo é a primeira criada para cada combinação única de descrição+categoria
-      const modelosMap = new Map();
-      
-      todasDespesasFixas.forEach(despesa => {
-        const chave = `${despesa.descricao}-${despesa.categoria_id}`;
-        const dataCreated = new Date(despesa.created_at);
-        
-        if (!modelosMap.has(chave) || new Date(modelosMap.get(chave).created_at) > dataCreated) {
-          modelosMap.set(chave, despesa);
-        }
-      });
-
-      const despesasModelo = Array.from(modelosMap.values());
-      console.log('Despesas modelo identificadas:', despesasModelo);
-
-      if (despesasModelo.length === 0) {
-        throw new Error('Nenhuma despesa fixa modelo disponível para gerar');
-      }
+      console.log('Despesas fixas modelo encontradas:', todasDespesasFixas);
 
       // Verificar se já existem despesas fixas para o mês selecionado
       const ano = targetDate.getFullYear();
@@ -152,6 +134,7 @@ export const useDespesas = () => {
         .from('despesas')
         .select('descricao, categoria_id, data_vencimento')
         .eq('tipo', 'fixa')
+        .eq('is_modelo', false) // Apenas despesas não modelo
         .gte('data_vencimento', inicioMesStr)
         .lte('data_vencimento', fimMesStr);
 
@@ -166,7 +149,7 @@ export const useDespesas = () => {
       let despesasJaExistentes = 0;
       const despesasParaGerar = [];
 
-      for (const modelo of despesasModelo) {
+      for (const modelo of todasDespesasFixas) {
         const jaExiste = despesasExistentes?.some(existente => 
           existente.descricao === modelo.descricao && 
           existente.categoria_id === modelo.categoria_id
@@ -182,7 +165,7 @@ export const useDespesas = () => {
       }
 
       // Se todas as despesas já existem, informar ao usuário
-      if (despesasJaExistentes === despesasModelo.length) {
+      if (despesasJaExistentes === todasDespesasFixas.length) {
         throw new Error(`As despesas fixas já foram geradas para ${targetDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })}`);
       }
 
@@ -213,7 +196,8 @@ export const useDespesas = () => {
             tipo: 'fixa',
             observacoes: modelo.observacoes,
             user_id: modelo.user_id,
-            pago: false
+            pago: false,
+            is_modelo: false // Marcar como não modelo
           }])
           .select()
           .single();

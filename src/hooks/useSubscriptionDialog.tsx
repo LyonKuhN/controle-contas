@@ -1,44 +1,67 @@
 
 import { useState } from 'react';
-import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 
 export const useSubscriptionDialog = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const { session, subscriptionData, checkSubscription } = useAuth();
+  const { subscriptionData, checkSubscription } = useAuth();
   const { toast } = useToast();
 
   const handleCancelSubscription = async () => {
-    if (!session) return;
-    
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('customer-portal', {
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (data?.url) {
-        window.open(data.url, '_blank');
-        // Fechar o diálogo após abrir o portal
-        setIsOpen(false);
-        // Verificar status da assinatura após um delay
-        setTimeout(() => {
-          checkSubscription();
-        }, 3000);
-      }
-    } catch (error) {
-      console.error('Error opening customer portal:', error);
+    if (!subscriptionData?.subscribed) {
       toast({
         title: "Erro",
-        description: "Erro ao abrir portal de cancelamento. Tente novamente.",
+        description: "Nenhuma assinatura ativa encontrada",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Get user's subscription data to find Stripe customer ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      const { data: subscriber, error: subscriberError } = await supabase
+        .from('subscribers')
+        .select('stripe_customer_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (subscriberError || !subscriber?.stripe_customer_id) {
+        throw new Error("Subscription data not found");
+      }
+
+      // Call the customer portal function with cancel action
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        body: { 
+          customerId: subscriber.stripe_customer_id,
+          action: 'cancel'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast({
+          title: "Sucesso",
+          description: "Assinatura cancelada com sucesso. Você ainda terá acesso até o final do período pago.",
+        });
+        
+        // Refresh subscription data
+        await checkSubscription();
+      } else {
+        throw new Error("Failed to cancel subscription");
+      }
+    } catch (error) {
+      console.error('Error canceling subscription:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao cancelar assinatura. Tente novamente.",
         variant: "destructive"
       });
     } finally {
@@ -47,8 +70,6 @@ export const useSubscriptionDialog = () => {
   };
 
   return {
-    isOpen,
-    setIsOpen,
     loading,
     subscriptionData,
     handleCancelSubscription

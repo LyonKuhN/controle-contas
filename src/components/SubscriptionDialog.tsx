@@ -1,4 +1,3 @@
-
 import {
   Dialog,
   DialogContent,
@@ -8,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Crown, CreditCard, AlertTriangle } from "lucide-react";
+import { Calendar, Crown, CreditCard, AlertTriangle, X } from "lucide-react";
 import { useSubscriptionDialog } from "@/hooks/useSubscriptionDialog";
 
 interface SubscriptionDialogProps {
@@ -25,6 +24,11 @@ const SubscriptionDialog = ({ isOpen, onClose }: SubscriptionDialogProps) => {
       month: '2-digit',
       year: 'numeric'
     });
+  };
+
+  const handleCancel = async () => {
+    await handleCancelSubscription();
+    // Keep dialog open to show updated status
   };
 
   return (
@@ -79,7 +83,7 @@ const SubscriptionDialog = ({ isOpen, onClose }: SubscriptionDialogProps) => {
                   <div className="text-sm text-orange-700">
                     <p className="font-medium">Cancelar assinatura</p>
                     <p className="text-xs mt-1">
-                      Você será redirecionado para o portal do cliente onde poderá cancelar sua assinatura.
+                      Ao cancelar, você manterá acesso até o final do período pago atual.
                     </p>
                   </div>
                 </div>
@@ -88,13 +92,13 @@ const SubscriptionDialog = ({ isOpen, onClose }: SubscriptionDialogProps) => {
               {/* Botões de ação */}
               <div className="flex flex-col gap-2">
                 <Button
-                  onClick={handleCancelSubscription}
+                  onClick={handleCancel}
                   disabled={loading}
-                  variant="outline"
+                  variant="destructive"
                   className="w-full"
                 >
-                  <CreditCard className="w-4 h-4 mr-2" />
-                  {loading ? 'Abrindo portal...' : 'Gerenciar Assinatura'}
+                  <X className="w-4 h-4 mr-2" />
+                  {loading ? 'Cancelando...' : 'Cancelar Assinatura'}
                 </Button>
               </div>
             </>
