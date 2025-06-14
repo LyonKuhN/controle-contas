@@ -57,27 +57,31 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '', 
     setIsLoading(true);
     
     try {
-      console.log("Enviando email de suporte...");
+      console.log("Salvando mensagem de suporte...");
       
-      const { data, error } = await supabase.functions.invoke('send-support-email', {
-        body: { 
-          subject, 
-          description,
-          userEmail: emailToUse,
-          userName: user?.user_metadata?.full_name || 'Usuário'
-        }
-      });
+      const { data, error } = await supabase
+        .from('support_messages')
+        .insert({
+          user_id: user?.id || null,
+          user_email: emailToUse,
+          user_name: user?.user_metadata?.full_name || 'Usuário',
+          subject: subject.trim(),
+          description: description.trim(),
+          status: 'pending'
+        })
+        .select()
+        .single();
 
       if (error) {
-        console.error("Erro da edge function:", error);
+        console.error("Erro ao salvar mensagem:", error);
         throw error;
       }
 
-      console.log("Resposta da edge function:", data);
+      console.log("Mensagem salva com sucesso:", data);
 
       toast({
-        title: "Email de suporte enviado!",
-        description: "Recebemos sua mensagem e responderemos em breve através do email adm@lyonpay.com.",
+        title: "Mensagem enviada com sucesso!",
+        description: "Sua mensagem foi registrada e nossa equipe entrará em contato em breve através do email adm@lyonpay.com.",
       });
       
       setSubject('');
@@ -85,17 +89,12 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '', 
       setUserEmail('');
       setDialogOpen(false);
     } catch (error: any) {
-      console.error('Error sending support email:', error);
+      console.error('Erro ao enviar mensagem de suporte:', error);
       toast({
-        title: "Email enviado com sucesso!",
-        description: "Sua mensagem foi recebida e será processada em breve. Responderemos através do email adm@lyonpay.com.",
+        title: "Erro ao enviar mensagem",
+        description: "Houve um problema ao registrar sua mensagem. Tente novamente ou entre em contato diretamente através do email adm@lyonpay.com.",
+        variant: "destructive"
       });
-      
-      // Clear form even on "error" since we're simulating success
-      setSubject('');
-      setDescription('');
-      setUserEmail('');
-      setDialogOpen(false);
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +117,7 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '', 
             Contato com Suporte
           </DialogTitle>
           <DialogDescription>
-            Entre em contato conosco. Nosso email de suporte é: <strong>adm@lyonpay.com</strong>
+            Entre em contato conosco. Sua mensagem será registrada e responderemos através do email: <strong>adm@lyonpay.com</strong>
           </DialogDescription>
         </DialogHeader>
         
@@ -175,7 +174,7 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '', 
               disabled={isLoading}
               className="flex-1"
             >
-              {isLoading ? 'Enviando...' : 'Enviar Email'}
+              {isLoading ? 'Enviando...' : 'Enviar Mensagem'}
             </Button>
           </div>
         </form>

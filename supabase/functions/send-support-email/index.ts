@@ -1,5 +1,6 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -23,99 +24,60 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { subject, description, userEmail, userName }: SupportEmailRequest = await req.json();
 
-    console.log("Sending support email with subject:", subject);
+    console.log("Processing support request with subject:", subject);
     console.log("User email:", userEmail);
     console.log("User name:", userName);
 
-    // Prepare email content
-    const emailContent = `
-      Nova solicitação de suporte - LYONPAY
-      
-      De: ${userName || 'Usuário'} (${userEmail})
-      Assunto: ${subject}
-      
-      Descrição:
-      ${description}
-      
-      ---
-      Esta mensagem foi enviada através do sistema de suporte do LYONPAY.
-      Para responder, utilize o email: ${userEmail}
-    `;
+    // Get the authorization header
+    const authHeader = req.headers.get('Authorization');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    const htmlContent = `
-      <h2>Nova solicitação de suporte - LYONPAY</h2>
-      <p><strong>De:</strong> ${userName || 'Usuário'} (${userEmail})</p>
-      <p><strong>Assunto:</strong> ${subject}</p>
-      <p><strong>Descrição:</strong></p>
-      <div style="background-color: #f5f5f5; padding: 15px; border-left: 4px solid #007bff; margin: 10px 0;">
-        ${description.replace(/\n/g, '<br>')}
-      </div>
-      <hr>
-      <p style="color: #666; font-size: 12px;">
-        Esta mensagem foi enviada através do sistema de suporte do LYONPAY.<br>
-        Para responder, utilize o email: ${userEmail}
-      </p>
-    `;
+    if (!supabaseUrl || !supabaseServiceKey) {
+      throw new Error('Missing Supabase configuration');
+    }
 
-    // Send email using fetch to a simple SMTP service
-    const emailData = {
-      to: "adm@lyonpay.com",
-      from: "adm@lyonpay.com",
-      replyTo: userEmail,
-      subject: `[SUPORTE] ${subject}`,
-      text: emailContent,
-      html: htmlContent,
-      smtp: {
-        host: "smtp.hostinger.com",
-        port: 465,
-        secure: true,
-        auth: {
-          user: "adm@lyonpay.com",
-          pass: "Herikana1705@"
-        }
+    // Create Supabase client with service role key for admin access
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Extract user ID from auth header if available
+    let userId = null;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.replace('Bearer ', '');
+        const { data: { user } } = await supabase.auth.getUser(token);
+        userId = user?.id || null;
+      } catch (error) {
+        console.log('Could not extract user from token:', error);
       }
-    };
+    }
 
-    console.log("Attempting to send email...");
-
-    // Use a simple email sending approach with fetch
-    const response = await fetch("https://api.emailjs.com/api/v1.0/email/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        service_id: "smtp_service",
-        template_id: "template_support",
-        user_id: "public_key",
-        template_params: {
-          to_email: "adm@lyonpay.com",
-          from_email: userEmail,
-          from_name: userName || 'Usuário',
-          subject: `[SUPORTE] ${subject}`,
-          message: description,
-          reply_to: userEmail
-        }
+    // Insert the support message into the database
+    const { data, error } = await supabase
+      .from('support_messages')
+      .insert({
+        user_id: userId,
+        user_email: userEmail,
+        user_name: userName || 'Usuário',
+        subject: subject,
+        description: description,
+        status: 'pending'
       })
-    });
+      .select()
+      .single();
 
-    // Since we can't use nodemailer directly in Deno edge functions,
-    // let's create a simple SMTP implementation
-    const smtpResponse = await sendEmailSMTP({
-      to: "adm@lyonpay.com",
-      from: "adm@lyonpay.com",
-      replyTo: userEmail,
-      subject: `[SUPORTE] ${subject}`,
-      html: htmlContent,
-      text: emailContent
-    });
+    if (error) {
+      console.error("Error saving support message:", error);
+      throw error;
+    }
 
-    console.log("Email sent successfully");
+    console.log("Support message saved successfully:", data.id);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "Email de suporte enviado com sucesso!",
+        message: "Mensagem de suporte registrada com sucesso!",
+        messageId: data.id,
         userEmail: userEmail
       }),
       {
@@ -130,7 +92,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error in send-support-email function:", error);
     return new Response(
       JSON.stringify({ 
-        error: "Erro ao enviar email de suporte",
+        error: "Erro ao registrar mensagem de suporte",
         details: error.message 
       }),
       {
@@ -140,31 +102,5 @@ const handler = async (req: Request): Promise<Response> => {
     );
   }
 };
-
-async function sendEmailSMTP(emailData: {
-  to: string;
-  from: string;
-  replyTo: string;
-  subject: string;
-  html: string;
-  text: string;
-}) {
-  try {
-    // Simple SMTP implementation using fetch to an SMTP gateway
-    // Since Deno edge functions don't support direct SMTP connections,
-    // we'll use a workaround approach
-    
-    console.log("Preparing to send email via SMTP...");
-    
-    // For now, let's simulate successful email sending
-    // In production, you might want to use a service like SendGrid, Mailgun, or similar
-    // that provides HTTP API access to SMTP functionality
-    
-    return { success: true, messageId: `msg_${Date.now()}` };
-  } catch (error) {
-    console.error("SMTP Error:", error);
-    throw error;
-  }
-}
 
 serve(handler);
