@@ -1,273 +1,269 @@
-
-import { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/hooks/useAuth';
+import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { Navigate, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
-import SmsConfirmation from '@/components/SmsConfirmation';
+import { Link } from 'react-router-dom';
 
-type ConfirmationMethod = 'email' | 'sms';
+const isValidEmail = (email: string): boolean => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const isValidPassword = (password: string): boolean => {
+  return password.length >= 6;
+};
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user, signIn, signUp } = useAuth();
+  const { toast } = useToast();
+
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [confirmationMethod, setConfirmationMethod] = useState<ConfirmationMethod>('email');
-  const [loading, setLoading] = useState(false);
-  const [showSmsConfirmation, setShowSmsConfirmation] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-  
-  const { signIn, signUp, user } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  if (user) {
-    return <Navigate to="/" replace />;
-  }
+  useEffect(() => {
+    const modeParam = searchParams.get('mode');
+    if (modeParam === 'signup') {
+      setMode('signup');
+    } else {
+      setMode('login');
+    }
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
+
+  const validateEmail = (): boolean => {
+    if (!email) {
+      setEmailError('O email é obrigatório.');
+      return false;
+    }
+    if (!isValidEmail(email)) {
+      setEmailError('Email inválido.');
+      return false;
+    }
+    setEmailError(null);
+    return true;
+  };
+
+  const validatePassword = (): boolean => {
+    if (!password) {
+      setPasswordError('A senha é obrigatória.');
+      return false;
+    }
+    if (!isValidPassword(password)) {
+      setPasswordError('A senha deve ter pelo menos 6 caracteres.');
+      return false;
+    }
+    setPasswordError(null);
+    return true;
+  };
+
+  const validateConfirmPassword = (): boolean => {
+    if (mode === 'signup') {
+      if (!confirmPassword) {
+        setConfirmPasswordError('A confirmação de senha é obrigatória.');
+        return false;
+      }
+      if (password !== confirmPassword) {
+        setConfirmPasswordError('As senhas não coincidem.');
+        return false;
+      }
+      setConfirmPasswordError(null);
+    }
+    return true;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
 
+    const isEmailValid = validateEmail();
+    const isPasswordValid = validatePassword();
+    const isConfirmPasswordValid = validateConfirmPassword();
+
+    if (!isEmailValid || !isPasswordValid || !isConfirmPasswordValid) {
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      if (isLogin) {
-        const { error } = await signIn(email, password);
-        if (error) {
-          toast({
-            title: "Erro",
-            description: error.message,
-            variant: "destructive"
-          });
-        } else {
-          toast({
-            title: "Sucesso",
-            description: "Login realizado com sucesso!"
-          });
-        }
+      if (mode === 'login') {
+        await signIn(email, password);
+        toast({
+          title: "Login realizado com sucesso!",
+          description: "Redirecionando para o painel...",
+        })
       } else {
-        // Validar confirmação de senha
-        if (password !== confirmPassword) {
-          toast({
-            title: "Erro",
-            description: "As senhas não coincidem",
-            variant: "destructive"
-          });
-          setLoading(false);
-          return;
-        }
-
-        if (password.length < 6) {
-          toast({
-            title: "Erro",
-            description: "A senha deve ter pelo menos 6 caracteres",
-            variant: "destructive"
-          });
-          setLoading(false);
-          return;
-        }
-
-        // Cadastro
-        const { error } = await signUp(email, password);
-        if (error) {
-          toast({
-            title: "Erro",
-            description: error.message,
-            variant: "destructive"
-          });
-        } else {
-          // Sucesso no cadastro
-          if (confirmationMethod === 'sms') {
-            setShowSmsConfirmation(true);
-          } else {
-            setShowSuccessMessage(true);
-            // Redirecionar para login após 3 segundos
-            setTimeout(() => {
-              setIsLogin(true);
-              setShowSuccessMessage(false);
-              setEmail('');
-              setPassword('');
-              setConfirmPassword('');
-              setPhone('');
-            }, 3000);
-          }
-        }
+        await signUp(email, password);
+        toast({
+          title: "Conta criada com sucesso!",
+          description: "Redirecionando para o painel...",
+        })
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro inesperado",
-        variant: "destructive"
-      });
+        variant: "destructive",
+        title: "Erro ao autenticar",
+        description: error?.message || 'Ocorreu um erro ao tentar autenticar. Verifique suas credenciais e tente novamente.',
+      })
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleSmsSuccess = () => {
-    setShowSmsConfirmation(false);
-    setIsLogin(true);
-    setEmail('');
-    setPassword('');
-    setConfirmPassword('');
-    setPhone('');
-    toast({
-      title: "Conta confirmada!",
-      description: "Agora você pode fazer login."
-    });
-  };
-
-  const handleBackFromSms = () => {
-    setShowSmsConfirmation(false);
-  };
-
-  if (showSmsConfirmation) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/20 flex items-center justify-center">
-        <SmsConfirmation
-          phone={phone}
-          onBack={handleBackFromSms}
-          onSuccess={handleSmsSuccess}
-        />
-      </div>
-    );
-  }
-
-  if (showSuccessMessage) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/20 flex items-center justify-center">
-        <Card className="p-8 w-full max-w-md">
-          <div className="text-center space-y-4">
-            <div className="text-4xl">✅</div>
-            <h2 className="text-2xl font-bold">Conta criada com sucesso!</h2>
-            <p className="text-muted-foreground">
-              {confirmationMethod === 'email' 
-                ? 'Verifique seu email para confirmar sua conta antes de fazer login.'
-                : 'Agora você pode fazer login com suas credenciais.'}
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Redirecionando para a página de login...
-            </p>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/20 flex items-center justify-center">
-      <div className="w-full max-w-md space-y-6">
-        {/* Back to Landing Button */}
-        <div className="text-center">
-          <Link to="/landing" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors">
-            <ArrowLeft className="w-4 h-4" />
-            Voltar à página inicial
+    <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-accent/20 flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-4">
+        <div className="flex justify-center mb-8">
+          <Link to="/">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Voltar ao Início
+            </Button>
           </Link>
         </div>
 
-        <Card className="p-8 w-full">
-          <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-            {isLogin ? 'Entrar' : 'Criar Conta'}
-          </h1>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                minLength={6}
-              />
-            </div>
-
-            {!isLogin && (
-              <div>
-                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  minLength={6}
-                />
-              </div>
-            )}
-
-            {!isLogin && (
-              <>
-                <div>
-                  <Label>Método de confirmação</Label>
-                  <RadioGroup
-                    value={confirmationMethod}
-                    onValueChange={(value: ConfirmationMethod) => setConfirmationMethod(value)}
-                    className="mt-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="email" id="email-confirm" />
-                      <Label htmlFor="email-confirm">Email</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="sms" id="sms-confirm" />
-                      <Label htmlFor="sms-confirm">SMS</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                {confirmationMethod === 'sms' && (
-                  <div>
-                    <Label htmlFor="phone">Telefone (com DDD)</Label>
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl text-center">{mode === 'login' ? 'Login' : 'Criar Conta'}</CardTitle>
+            <CardDescription className="text-center">
+              {mode === 'login'
+                ? 'Entre com seu email e senha para acessar o painel.'
+                : 'Crie sua conta para começar a controlar suas finanças.'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            <Tabs defaultValue={mode} className="w-full">
+              <TabsList>
+                <TabsTrigger value="login" onClick={() => setMode('login')}>
+                  Login
+                </TabsTrigger>
+                <TabsTrigger value="signup" onClick={() => setMode('signup')}>
+                  Criar Conta
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="login">
+                <form onSubmit={handleSubmit} className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
                     <Input
-                      id="phone"
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="(11) 99999-9999"
-                      required={confirmationMethod === 'sms'}
+                      id="email"
+                      type="email"
+                      placeholder="seuemail@exemplo.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onBlur={validateEmail}
                     />
+                    {emailError && <Alert variant="destructive"><AlertDescription>{emailError}</AlertDescription></Alert>}
                   </div>
-                )}
-              </>
-            )}
-            
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Criar Conta')}
-            </Button>
-          </form>
-          
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setPassword('');
-                setConfirmPassword('');
-              }}
-              className="text-primary hover:underline"
-            >
-              {isLogin ? 'Não tem conta? Criar uma' : 'Já tem conta? Entrar'}
-            </button>
-          </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="password">Senha</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Senha"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onBlur={validatePassword}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 -translate-y-1/2"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        <span className="sr-only">Mostrar senha</span>
+                      </Button>
+                    </div>
+                    {passwordError && <Alert variant="destructive"><AlertDescription>{passwordError}</AlertDescription></Alert>}
+                  </div>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? 'Entrando...' : 'Entrar'}
+                  </Button>
+                </form>
+              </TabsContent>
+              <TabsContent value="signup">
+                <form onSubmit={handleSubmit} className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="seuemail@exemplo.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      onBlur={validateEmail}
+                    />
+                    {emailError && <Alert variant="destructive"><AlertDescription>{emailError}</AlertDescription></Alert>}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="password">Senha</Label>
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Senha"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        onBlur={validatePassword}
+                      />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 -translate-y-1/2"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        <span className="sr-only">Mostrar senha</span>
+                      </Button>
+                    </div>
+                    {passwordError && <Alert variant="destructive"><AlertDescription>{passwordError}</AlertDescription></Alert>}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                    <div className="relative">
+                      <Input
+                        id="confirmPassword"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Confirmar Senha"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onBlur={validateConfirmPassword}
+                      />
+                    </div>
+                    {confirmPasswordError && <Alert variant="destructive"><AlertDescription>{confirmPasswordError}</AlertDescription></Alert>}
+                  </div>
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? 'Criando conta...' : 'Criar Conta'}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+            <Separator />
+          </CardContent>
         </Card>
       </div>
     </div>
