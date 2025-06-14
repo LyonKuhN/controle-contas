@@ -93,11 +93,11 @@ const CadastroDespesas = () => {
     let valorTotal = valorFinal;
     let dataVencimento = formData.data_vencimento;
 
-    // Para despesas fixas, criar uma data modelo usando o primeiro dia do mês atual com o dia selecionado
+    // Para despesas fixas, criar uma data modelo usando o dia selecionado no primeiro dia do ano 2000 (data fictícia para modelo)
     if (formData.tipo === 'fixa') {
-      const hoje = new Date();
       const diaVencimento = parseInt(formData.dia_vencimento);
-      dataVencimento = new Date(hoje.getFullYear(), hoje.getMonth(), diaVencimento).toISOString().split('T')[0];
+      // Usar uma data fictícia apenas para armazenar o dia do vencimento
+      dataVencimento = `2000-01-${String(diaVencimento).padStart(2, '0')}`;
     }
 
     // Calcular valores para despesas parceladas
@@ -124,7 +124,7 @@ const CadastroDespesas = () => {
 
     try {
       if (formData.tipo === 'fixa') {
-        // Criar apenas uma despesa modelo para despesas fixas (não gerar para o mês atual)
+        // Criar apenas uma despesa modelo para despesas fixas (não gerar para nenhum mês)
         await createDespesa.mutateAsync({
           ...despesaBase,
           data_vencimento: dataVencimento,
@@ -239,7 +239,7 @@ const CadastroDespesas = () => {
                 </SelectContent>
               </Select>
               <p className="text-sm text-muted-foreground mt-1">
-                Esta despesa será salva como modelo. Use o botão "Gerar Despesas Fixas" no controle de contas para criar as despesas do mês.
+                Esta despesa será salva apenas como modelo. Use o botão "Gerar Despesas Fixas" no controle de contas para criar as despesas do mês desejado.
               </p>
             </div>
           )}
