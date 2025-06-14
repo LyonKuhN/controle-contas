@@ -1,20 +1,26 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Crown, CreditCard } from 'lucide-react';
+import { Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 const TrialExpiredOverlay = () => {
   const { user, subscriptionData, session } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
   const [isTrialExpired, setIsTrialExpired] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Only show on specific pages
+  const restrictedPages = ['/despesas', '/receitas', '/controle-contas'];
+  const shouldShowOnCurrentPage = restrictedPages.includes(location.pathname);
+
   useEffect(() => {
-    if (!user || !subscriptionData) return;
+    if (!user || !subscriptionData || !shouldShowOnCurrentPage) return;
 
     const checkTrialStatus = () => {
       // If user has active subscription, don't show overlay
@@ -39,7 +45,7 @@ const TrialExpiredOverlay = () => {
     const interval = setInterval(checkTrialStatus, 60000); // Check every minute
 
     return () => clearInterval(interval);
-  }, [user, subscriptionData]);
+  }, [user, subscriptionData, shouldShowOnCurrentPage]);
 
   const handleSubscribe = async () => {
     if (!session) return;
@@ -71,8 +77,8 @@ const TrialExpiredOverlay = () => {
     }
   };
 
-  // Don't show overlay if user has active subscription or trial hasn't expired
-  if (!isTrialExpired || subscriptionData?.subscribed) return null;
+  // Don't show overlay if user has active subscription, trial hasn't expired, or not on restricted page
+  if (!isTrialExpired || subscriptionData?.subscribed || !shouldShowOnCurrentPage) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">

@@ -2,15 +2,14 @@
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { User } from "lucide-react";
+import { User, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import NavigationIsland from "@/components/NavigationIsland";
 import ThemeToggle from "@/components/ThemeToggle";
 import TrialExpiredOverlay from "@/components/TrialExpiredOverlay";
+import TrialNotification from "@/components/TrialNotification";
 import { useAuth } from "@/hooks/useAuth";
-import { useDespesas } from "@/hooks/useDespesas";
-import { useReceitas } from "@/hooks/useReceitas";
-import { useCategorias } from "@/hooks/useCategorias";
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { useComparativeData } from "@/hooks/useComparativeData";
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
 
 const menuItems = [
   {
@@ -35,33 +34,30 @@ const menuItems = [
 
 const Index = () => {
   const { user } = useAuth();
-  const { despesas } = useDespesas();
-  const { receitas } = useReceitas();
-  const { categorias } = useCategorias();
+  const data = useComparativeData();
 
-  // Calcular totais
-  const totalDespesas = despesas.reduce((acc, despesa) => acc + Number(despesa.valor), 0);
-  const totalReceitas = receitas.reduce((acc, receita) => acc + Number(receita.valor), 0);
-  const saldoLiquido = totalReceitas - totalDespesas;
+  const formatCurrency = (value: number) => {
+    return value.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+  };
 
-  // Despesas por categoria
-  const despesasPorCategoria = despesas.reduce((acc, despesa) => {
-    const categoria = categorias.find(cat => cat.id === despesa.categoria_id);
-    const nomeCategoria = categoria?.nome || 'Sem categoria';
-    acc[nomeCategoria] = (acc[nomeCategoria] || 0) + Number(despesa.valor);
-    return acc;
-  }, {} as Record<string, number>);
+  const formatPercentage = (value: number) => {
+    return `${value > 0 ? '+' : ''}${value.toFixed(1)}%`;
+  };
 
-  const dadosPieChart = Object.entries(despesasPorCategoria).map(([nome, valor], index) => ({
-    name: nome,
-    value: valor,
-    fill: `hsl(${index * 45}, 70%, 60%)`
-  }));
+  const getChangeIcon = (change: number) => {
+    if (change > 0) return <TrendingUp className="w-4 h-4 text-green-600" />;
+    if (change < 0) return <TrendingDown className="w-4 h-4 text-red-600" />;
+    return <Minus className="w-4 h-4 text-gray-500" />;
+  };
 
-  const dadosBarChart = [
-    { name: 'Receitas', valor: totalReceitas, fill: '#22c55e' },
-    { name: 'Despesas', valor: totalDespesas, fill: '#ef4444' },
-  ];
+  const getChangeColor = (change: number, isGoodWhenPositive: boolean = true) => {
+    if (change === 0) return "text-gray-600";
+    if (isGoodWhenPositive) {
+      return change > 0 ? "text-green-600" : "text-red-600";
+    } else {
+      return change > 0 ? "text-red-600" : "text-green-600";
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -109,6 +105,9 @@ const Index = () => {
           </p>
         </div>
 
+        {/* Trial Notification */}
+        <TrialNotification />
+
         {/* Menu Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto mb-12">
           {menuItems.map((item, index) => (
@@ -140,83 +139,146 @@ const Index = () => {
         <div className="space-y-8">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-foreground mb-4">📊 Dashboard Financeiro</h2>
-            <p className="text-muted-foreground">Análise completa das suas finanças</p>
+            <p className="text-muted-foreground">Análise completa das suas finanças com comparativo mensal</p>
           </div>
-          
-          {/* Cards de Resumo */}
+
+          {/* Resumo Atual vs Anterior */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <Card className="p-6 bg-gradient-to-r from-green-500/10 to-green-600/10 border-green-200">
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-green-700 mb-2">💰 Total Receitas</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-green-700">💰 Receitas</h3>
+                  <div className="flex items-center gap-1">
+                    {getChangeIcon(data.changes.receitas)}
+                    <span className={`text-xs font-medium ${getChangeColor(data.changes.receitas)}`}>
+                      {formatPercentage(data.changes.receitas)}
+                    </span>
+                  </div>
+                </div>
                 <p className="text-2xl font-bold text-green-600">
-                  R$ {totalReceitas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ {formatCurrency(data.current.receitas)}
+                </p>
+                <p className="text-xs text-green-600/70">
+                  {data.last.monthName}: R$ {formatCurrency(data.last.receitas)}
                 </p>
               </div>
             </Card>
             
             <Card className="p-6 bg-gradient-to-r from-red-500/10 to-red-600/10 border-red-200">
-              <div className="text-center">
-                <h3 className="text-lg font-semibold text-red-700 mb-2">💸 Total Despesas</h3>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-red-700">💸 Despesas</h3>
+                  <div className="flex items-center gap-1">
+                    {getChangeIcon(data.changes.despesas)}
+                    <span className={`text-xs font-medium ${getChangeColor(data.changes.despesas, false)}`}>
+                      {formatPercentage(data.changes.despesas)}
+                    </span>
+                  </div>
+                </div>
                 <p className="text-2xl font-bold text-red-600">
-                  R$ {totalDespesas.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  R$ {formatCurrency(data.current.despesas)}
+                </p>
+                <p className="text-xs text-red-600/70">
+                  {data.last.monthName}: R$ {formatCurrency(data.last.despesas)}
                 </p>
               </div>
             </Card>
             
-            <Card className={`p-6 ${saldoLiquido >= 0 ? 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 border-blue-200' : 'bg-gradient-to-r from-red-500/10 to-red-600/10 border-red-200'}`}>
-              <div className="text-center">
-                <h3 className={`text-lg font-semibold mb-2 ${saldoLiquido >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
-                  📈 Saldo Líquido
-                </h3>
-                <p className={`text-2xl font-bold ${saldoLiquido >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                  R$ {saldoLiquido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            <Card className={`p-6 ${data.current.saldo >= 0 ? 'bg-gradient-to-r from-blue-500/10 to-blue-600/10 border-blue-200' : 'bg-gradient-to-r from-red-500/10 to-red-600/10 border-red-200'}`}>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className={`text-lg font-semibold ${data.current.saldo >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                    📈 Saldo Líquido
+                  </h3>
+                  <div className="flex items-center gap-1">
+                    {getChangeIcon(data.changes.saldo)}
+                    <span className={`text-xs font-medium ${getChangeColor(data.changes.saldo)}`}>
+                      {formatPercentage(data.changes.saldo)}
+                    </span>
+                  </div>
+                </div>
+                <p className={`text-2xl font-bold ${data.current.saldo >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                  R$ {formatCurrency(data.current.saldo)}
+                </p>
+                <p className={`text-xs ${data.current.saldo >= 0 ? 'text-blue-600/70' : 'text-red-600/70'}`}>
+                  {data.last.monthName}: R$ {formatCurrency(data.last.saldo)}
                 </p>
               </div>
             </Card>
           </div>
 
           {/* Gráficos */}
-          {(dadosPieChart.length > 0 || dadosBarChart.length > 0) && (
+          {(data.charts.pieChart.length > 0 || data.charts.barChart.length > 0) && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Gráfico de Pizza - Despesas por Categoria */}
-              {dadosPieChart.length > 0 && (
+              {data.charts.pieChart.length > 0 && (
                 <Card className="p-6">
-                  <h3 className="text-xl font-bold mb-4 text-center">Despesas por Categoria</h3>
+                  <h3 className="text-xl font-bold mb-4 text-center">Despesas por Categoria - {data.current.monthName}</h3>
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
                       <Pie
-                        data={dadosPieChart}
+                        data={data.charts.pieChart}
                         cx="50%"
                         cy="50%"
                         outerRadius={80}
                         dataKey="value"
                         label={({name, percent}) => `${name} (${(percent * 100).toFixed(1)}%)`}
                       >
-                        {dadosPieChart.map((entry, index) => (
+                        {data.charts.pieChart.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
+                      <Tooltip formatter={(value) => `R$ ${formatCurrency(Number(value))}`} />
                     </PieChart>
                   </ResponsiveContainer>
                 </Card>
               )}
 
-              {/* Gráfico de Barras - Receitas vs Despesas */}
+              {/* Gráfico de Comparação Mensal */}
               <Card className="p-6">
-                <h3 className="text-xl font-bold mb-4 text-center">Receitas vs Despesas</h3>
+                <h3 className="text-xl font-bold mb-4 text-center">Comparativo Mensal</h3>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={dadosBarChart}>
+                  <LineChart data={data.charts.comparison}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="name" />
-                    <YAxis tickFormatter={(value) => `R$ ${value.toLocaleString('pt-BR')}`} />
-                    <Tooltip formatter={(value) => `R$ ${Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`} />
-                    <Bar dataKey="valor" />
-                  </BarChart>
+                    <XAxis dataKey="mes" />
+                    <YAxis tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`} />
+                    <Tooltip formatter={(value) => `R$ ${formatCurrency(Number(value))}`} />
+                    <Line type="monotone" dataKey="receitas" stroke="#22c55e" strokeWidth={2} name="Receitas" />
+                    <Line type="monotone" dataKey="despesas" stroke="#ef4444" strokeWidth={2} name="Despesas" />
+                    <Line type="monotone" dataKey="saldo" stroke="#3b82f6" strokeWidth={2} name="Saldo" />
+                  </LineChart>
                 </ResponsiveContainer>
               </Card>
             </div>
           )}
+
+          {/* Resumo de Performance */}
+          <Card className="p-6">
+            <h3 className="text-xl font-bold mb-4 text-center">Resumo de Performance</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <div className={`text-2xl font-bold ${getChangeColor(data.changes.receitas)}`}>
+                  {formatPercentage(data.changes.receitas)}
+                </div>
+                <p className="text-sm text-muted-foreground">Variação em Receitas</p>
+                <p className="text-xs text-muted-foreground">{data.last.monthName} → {data.current.monthName}</p>
+              </div>
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <div className={`text-2xl font-bold ${getChangeColor(data.changes.despesas, false)}`}>
+                  {formatPercentage(data.changes.despesas)}
+                </div>
+                <p className="text-sm text-muted-foreground">Variação em Despesas</p>
+                <p className="text-xs text-muted-foreground">{data.last.monthName} → {data.current.monthName}</p>
+              </div>
+              <div className="text-center p-4 bg-muted/50 rounded-lg">
+                <div className={`text-2xl font-bold ${getChangeColor(data.changes.saldo)}`}>
+                  {formatPercentage(data.changes.saldo)}
+                </div>
+                <p className="text-sm text-muted-foreground">Variação no Saldo</p>
+                <p className="text-xs text-muted-foreground">{data.last.monthName} → {data.current.monthName}</p>
+              </div>
+            </div>
+          </Card>
         </div>
       </div>
     </div>

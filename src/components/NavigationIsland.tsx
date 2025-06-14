@@ -1,10 +1,9 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { House, PieChart, FileText, DollarSign, RefreshCw } from "lucide-react";
+import { House, FileText, DollarSign, RefreshCw } from "lucide-react";
 
 const navigationItems = [
   { icon: House, path: "/", label: "Home" },
-  { icon: PieChart, path: "/dashboard", label: "Dashboard" },
   { icon: FileText, path: "/despesas", label: "Despesas" },
   { icon: DollarSign, path: "/receitas", label: "Receitas" },
   { icon: RefreshCw, path: "/controle-contas", label: "Controle" }
@@ -25,8 +24,8 @@ const NavigationIsland = () => {
                 to={item.path}
                 className={`p-3 rounded-full transition-all duration-300 ${
                   isActive 
-                    ? 'bg-primary text-white' 
-                    : 'text-white/80 hover:text-white hover:bg-white/20'
+                    ? 'bg-primary text-primary-foreground shadow-lg' 
+                    : 'text-foreground/70 hover:text-foreground hover:bg-primary/10 hover:shadow-md'
                 }`}
                 title={item.label}
               >
