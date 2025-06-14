@@ -35,17 +35,19 @@ serve(async (req) => {
         throw new Error("No active subscription found");
       }
 
-      // Cancel the first active subscription (assuming one subscription per customer)
+      // Cancel the subscription at period end (not immediately)
       const subscription = subscriptions.data[0];
-      const canceledSubscription = await stripe.subscriptions.cancel(subscription.id);
+      const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
+        cancel_at_period_end: true
+      });
 
-      console.log("Subscription canceled:", canceledSubscription.id);
+      console.log("Subscription set to cancel at period end:", updatedSubscription.id);
 
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: "Subscription canceled successfully",
-          subscription: canceledSubscription 
+          message: "Subscription will be canceled at the end of the current billing period",
+          subscription: updatedSubscription 
         }),
         {
           headers: { "Content-Type": "application/json", ...corsHeaders },

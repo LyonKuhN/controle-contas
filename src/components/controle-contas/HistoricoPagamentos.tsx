@@ -7,8 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDespesas } from "@/hooks/useDespesas";
 import { useCategorias } from "@/hooks/useCategorias";
-import { Filter, X, Plus } from "lucide-react";
-import AddCategoriaDialog from "@/components/categorias/AddCategoriaDialog";
+import { Filter, X } from "lucide-react";
 
 const HistoricoPagamentos = () => {
   const { despesas, isLoading } = useDespesas();
@@ -20,7 +19,6 @@ const HistoricoPagamentos = () => {
     valorMax: ""
   });
   const [mostrarFiltros, setMostrarFiltros] = useState(false);
-  const [showAddCategoria, setShowAddCategoria] = useState(false);
 
   console.log('HistoricoPagamentos - despesas:', despesas);
   console.log('HistoricoPagamentos - filtros:', filtros);
@@ -154,35 +152,25 @@ const HistoricoPagamentos = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium mb-1 block">Categoria</label>
-              <div className="flex gap-2">
-                <Select value={filtros.categoria} onValueChange={(value) => {
-                  console.log('Categoria selecionada:', value);
-                  setFiltros({...filtros, categoria: value});
-                }}>
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Todas as categorias" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todas">Todas as categorias</SelectItem>
-                    {categorias.map((categoria) => (
-                      <SelectItem 
-                        key={categoria.id} 
-                        value={categoria.id}
-                      >
-                        {categoria.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowAddCategoria(true)}
-                  className="px-2"
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
+              <Select value={filtros.categoria} onValueChange={(value) => {
+                console.log('Categoria selecionada:', value);
+                setFiltros({...filtros, categoria: value});
+              }}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as categorias" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as categorias</SelectItem>
+                  {categorias.map((categoria) => (
+                    <SelectItem 
+                      key={categoria.id} 
+                      value={categoria.id}
+                    >
+                      {categoria.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
@@ -299,13 +287,6 @@ const HistoricoPagamentos = () => {
           )}
         </div>
       </div>
-
-      {/* Dialog para adicionar categoria */}
-      <AddCategoriaDialog
-        open={showAddCategoria}
-        onClose={() => setShowAddCategoria(false)}
-        tipo="despesa"
-      />
     </div>
   );
 };

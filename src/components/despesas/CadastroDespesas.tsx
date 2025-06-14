@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -123,11 +124,12 @@ const CadastroDespesas = () => {
 
     try {
       if (formData.tipo === 'fixa') {
-        // Criar apenas uma despesa modelo para despesas fixas
+        // Criar apenas uma despesa modelo para despesas fixas (não gerar para o mês atual)
         await createDespesa.mutateAsync({
           ...despesaBase,
           data_vencimento: dataVencimento,
-          parcela_atual: undefined
+          parcela_atual: undefined,
+          is_modelo: true // Marcar explicitamente como modelo
         });
       } else if (formData.tipo === 'parcelada') {
         // Criar todas as parcelas automaticamente
@@ -137,7 +139,8 @@ const CadastroDespesas = () => {
         await createDespesa.mutateAsync({
           ...despesaBase,
           data_vencimento: dataVencimento,
-          parcela_atual: undefined
+          parcela_atual: undefined,
+          is_modelo: false
         });
       }
 

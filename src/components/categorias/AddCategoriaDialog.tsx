@@ -11,7 +11,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -24,7 +23,6 @@ interface AddCategoriaDialogProps {
 
 const AddCategoriaDialog = ({ open, onClose, tipo }: AddCategoriaDialogProps) => {
   const [nome, setNome] = useState("");
-  const [cor, setCor] = useState("#8b5cf6");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -49,7 +47,6 @@ const AddCategoriaDialog = ({ open, onClose, tipo }: AddCategoriaDialogProps) =>
         description: "Categoria criada com sucesso!"
       });
       setNome("");
-      setCor("#8b5cf6");
       onClose();
     },
     onError: (error) => {
@@ -76,15 +73,9 @@ const AddCategoriaDialog = ({ open, onClose, tipo }: AddCategoriaDialogProps) =>
     createCategoria.mutate({
       nome: nome.trim(),
       tipo,
-      cor
+      cor: "#8b5cf6" // Cor padrão fixa
     });
   };
-
-  const cores = [
-    "#8b5cf6", "#ef4444", "#22c55e", "#3b82f6", 
-    "#f59e0b", "#ec4899", "#10b981", "#f97316",
-    "#6366f1", "#84cc16", "#06b6d4", "#8b5cf6"
-  ];
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -106,23 +97,6 @@ const AddCategoriaDialog = ({ open, onClose, tipo }: AddCategoriaDialogProps) =>
               placeholder="Digite o nome da categoria"
               required
             />
-          </div>
-
-          <div>
-            <Label htmlFor="cor">Cor</Label>
-            <div className="flex gap-2 mt-2">
-              {cores.map((corOption) => (
-                <button
-                  key={corOption}
-                  type="button"
-                  className={`w-8 h-8 rounded-full border-2 ${
-                    cor === corOption ? 'border-gray-900' : 'border-gray-300'
-                  }`}
-                  style={{ backgroundColor: corOption }}
-                  onClick={() => setCor(corOption)}
-                />
-              ))}
-            </div>
           </div>
 
           <DialogFooter>

@@ -67,19 +67,28 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
+    // Check for both active and cancel_at_period_end subscriptions
     const subscriptions = await stripe.subscriptions.list({
       customer: customerId,
       status: "active",
       limit: 1,
     });
-    const hasActiveSub = subscriptions.data.length > 0;
+    
+    let hasActiveSub = subscriptions.data.length > 0;
     let subscriptionTier = null;
     let subscriptionEnd = null;
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
+      
+      // Even if the subscription is set to cancel at period end, it's still active until then
+      const isCancelingAtPeriodEnd = subscription.cancel_at_period_end;
+      logStep("Active subscription found", { 
+        subscriptionId: subscription.id, 
+        endDate: subscriptionEnd,
+        cancelingAtPeriodEnd: isCancelingAtPeriodEnd 
+      });
       
       // Check if the subscription is for our Premium product
       const priceId = subscription.items.data[0].price.id;

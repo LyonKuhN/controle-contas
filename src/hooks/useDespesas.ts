@@ -51,12 +51,17 @@ export const useDespesas = () => {
   const createDespesa = useMutation({
     mutationFn: async (despesa: Omit<Despesa, 'id' | 'categoria'>) => {
       console.log('Criando despesa:', despesa);
+      
+      // Para despesas fixas, marcar como modelo apenas se is_modelo for explicitamente true
+      const despesaData = {
+        ...despesa,
+        user_id: (await supabase.auth.getUser()).data.user?.id,
+        is_modelo: despesa.tipo === 'fixa' && despesa.is_modelo === true
+      };
+
       const { data, error } = await supabase
         .from('despesas')
-        .insert([{
-          ...despesa,
-          user_id: (await supabase.auth.getUser()).data.user?.id
-        }])
+        .insert([despesaData])
         .select()
         .single();
 
@@ -71,7 +76,7 @@ export const useDespesas = () => {
       queryClient.invalidateQueries({ queryKey: ['despesas'] });
       
       // Personalizar mensagem de sucesso baseada no tipo
-      if (variables.tipo === 'fixa') {
+      if (variables.tipo === 'fixa' && variables.is_modelo) {
         toast({
           title: "Sucesso",
           description: "Despesa fixa modelo cadastrada! Use o botão 'Gerar Despesas Fixas' no controle de contas para criar as despesas do mês."
