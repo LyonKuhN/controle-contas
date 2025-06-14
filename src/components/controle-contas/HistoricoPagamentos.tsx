@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,10 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useDespesas } from "@/hooks/useDespesas";
+import { useCategorias } from "@/hooks/useCategorias";
 import { Filter, X } from "lucide-react";
 
 const HistoricoPagamentos = () => {
   const { despesas, isLoading } = useDespesas();
+  const { categorias, isLoading: categoriasLoading } = useCategorias('despesa');
   const [filtros, setFiltros] = useState({
     categoria: "",
     tipo: "",
@@ -20,6 +21,7 @@ const HistoricoPagamentos = () => {
 
   console.log('HistoricoPagamentos - despesas:', despesas);
   console.log('HistoricoPagamentos - filtros:', filtros);
+  console.log('HistoricoPagamentos - categorias:', categorias);
 
   if (isLoading) {
     return (
@@ -54,10 +56,9 @@ const HistoricoPagamentos = () => {
 
   // Aplicar filtros apenas se existem despesas
   if (despesasFiltradas.length > 0) {
-    if (filtros.categoria && filtros.categoria.trim() !== "") {
+    if (filtros.categoria && filtros.categoria.trim() !== "" && filtros.categoria !== "todas") {
       despesasFiltradas = despesasFiltradas.filter(despesa => 
-        despesa.categoria?.nome && 
-        despesa.categoria.nome.toLowerCase().includes(filtros.categoria.toLowerCase())
+        despesa.categoria?.id === filtros.categoria
       );
     }
 
@@ -127,7 +128,7 @@ const HistoricoPagamentos = () => {
     return total + (despesa?.valor || 0);
   }, 0);
 
-  const temFiltrosAtivos = filtros.categoria || (filtros.tipo && filtros.tipo !== "todos") || filtros.valorMin || filtros.valorMax;
+  const temFiltrosAtivos = (filtros.categoria && filtros.categoria !== "todas") || (filtros.tipo && filtros.tipo !== "todos") || filtros.valorMin || filtros.valorMax;
 
   return (
     <div className="space-y-6">
@@ -149,11 +150,19 @@ const HistoricoPagamentos = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div>
               <label className="text-sm font-medium mb-1 block">Categoria</label>
-              <Input
-                placeholder="Buscar categoria..."
-                value={filtros.categoria}
-                onChange={(e) => setFiltros({...filtros, categoria: e.target.value})}
-              />
+              <Select value={filtros.categoria} onValueChange={(value) => setFiltros({...filtros, categoria: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Todas as categorias" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as categorias</SelectItem>
+                  {categorias.map((categoria) => (
+                    <SelectItem key={categoria.id} value={categoria.id}>
+                      {categoria.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div>

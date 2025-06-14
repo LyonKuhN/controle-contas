@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import NavigationIsland from "@/components/NavigationIsland";
 import UserMenu from "@/components/UserMenu";
 import TrialExpiredOverlay from "@/components/TrialExpiredOverlay";
 import TrialNotification from "@/components/TrialNotification";
+import TrialStatusCard from "@/components/TrialStatusCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useComparativeData } from "@/hooks/useComparativeData";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, LineChart, Line } from 'recharts';
@@ -90,6 +92,11 @@ const Index = () => {
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Gerencie suas finanças pessoais de forma simples e eficiente
           </p>
+        </div>
+
+        {/* Trial Status Card */}
+        <div className="max-w-md mx-auto mb-8">
+          <TrialStatusCard />
         </div>
 
         {/* Trial Notification */}

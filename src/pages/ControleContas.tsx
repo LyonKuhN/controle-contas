@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Zap } from "lucide-react";
 import ContasPagar from "@/components/controle-contas/ContasPagar";
 import HistoricoPagamentos from "@/components/controle-contas/HistoricoPagamentos";
 import NavigationIsland from "@/components/NavigationIsland";
+import UserMenu from "@/components/UserMenu";
 import { useDespesas } from "@/hooks/useDespesas";
 import { useReceitas } from "@/hooks/useReceitas";
 
@@ -69,9 +70,19 @@ const ControleContas = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-accent/20">
-      <NavigationIsland />
+      {/* Navigation Island and User Menu */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="relative">
+          <NavigationIsland />
+          
+          {/* User Menu - positioned at the same height as navigation island */}
+          <div className="absolute top-0 right-0 flex items-center">
+            <UserMenu />
+          </div>
+        </div>
+      </div>
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4">📋 Controle de Contas</h1>
           <p className="text-muted-foreground">Gerencie suas contas e acompanhe pagamentos</p>
