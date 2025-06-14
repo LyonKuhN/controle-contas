@@ -6,6 +6,7 @@ import { Edit, Trash2, Check, Undo, ChevronDown, ChevronRight } from "lucide-rea
 import { useState } from "react";
 import { Despesa } from "@/hooks/useDespesas";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { formatDateFromString } from "@/utils/dateUtils";
 
 interface DespesaGroupProps {
   despesas: Despesa[];
@@ -88,11 +89,11 @@ const DespesaGroup = ({ despesas, onPagar, onDesfazerPagamento, onEdit, onDelete
               )}
             </p>
             <p className={`text-sm ${despesa.pago ? 'text-green-600' : 'text-muted-foreground'}`}>
-              Vencimento: {new Date(despesa.data_vencimento).toLocaleDateString('pt-BR')}
+              Vencimento: {formatDateFromString(despesa.data_vencimento)}
             </p>
             {despesa.pago && despesa.data_pagamento && (
               <p className="text-sm text-green-600">
-                Pago em: {new Date(despesa.data_pagamento).toLocaleDateString('pt-BR')}
+                Pago em: {formatDateFromString(despesa.data_pagamento)}
               </p>
             )}
           </div>

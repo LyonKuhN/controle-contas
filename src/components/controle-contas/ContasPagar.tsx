@@ -6,6 +6,7 @@ import { CheckCircle, Edit, Undo } from "lucide-react";
 import { useDespesas } from "@/hooks/useDespesas";
 import { useState } from "react";
 import EditDespesaDialog from "./EditDespesaDialog";
+import { formatDateFromString } from "@/utils/dateUtils";
 
 interface ContasPagarProps {
   currentDate: Date;
@@ -135,7 +136,7 @@ const ContasPagar = ({ currentDate }: ContasPagarProps) => {
                       R$ {despesa.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                     </p>
                     <p className={`text-sm ${isAtrasada(despesa.data_vencimento) ? 'text-red-600' : 'text-muted-foreground'}`}>
-                      Venc: {new Date(despesa.data_vencimento).toLocaleDateString('pt-BR')}
+                      Venc: {formatDateFromString(despesa.data_vencimento)}
                     </p>
                   </div>
                   
@@ -197,7 +198,7 @@ const ContasPagar = ({ currentDate }: ContasPagarProps) => {
                     </p>
                     {despesa.data_pagamento && (
                       <p className="text-sm text-green-600">
-                        Pago em: {new Date(despesa.data_pagamento).toLocaleDateString('pt-BR')}
+                        Pago em: {formatDateFromString(despesa.data_pagamento)}
                       </p>
                     )}
                   </div>
