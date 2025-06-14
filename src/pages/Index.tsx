@@ -1,10 +1,9 @@
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { User, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import NavigationIsland from "@/components/NavigationIsland";
-import ThemeToggle from "@/components/ThemeToggle";
-import SupportDialog from "@/components/SupportDialog";
+import UserMenu from "@/components/UserMenu";
 import TrialExpiredOverlay from "@/components/TrialExpiredOverlay";
 import TrialNotification from "@/components/TrialNotification";
 import { useAuth } from "@/hooks/useAuth";
@@ -63,27 +62,14 @@ const Index = () => {
     <div className="min-h-screen">
       <TrialExpiredOverlay />
       
-      {/* Navigation Island, Theme Toggle and Profile Button */}
+      {/* Navigation Island and User Menu */}
       <div className="container mx-auto px-4 py-6">
         <div className="relative">
           <NavigationIsland />
           
-          {/* Theme Toggle, Support and Profile Button - positioned at the same height as navigation island */}
-          <div className="absolute top-0 right-0 flex items-center gap-3">
-            <SupportDialog variant="outline" size="sm" />
-            <ThemeToggle />
-            {user && (
-              <Link to="/profile">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="nav-island flex items-center gap-2 bg-transparent border-primary/20 hover:bg-primary/10"
-                >
-                  <User className="w-4 h-4" />
-                  Perfil
-                </Button>
-              </Link>
-            )}
+          {/* User Menu - positioned at the same height as navigation island */}
+          <div className="absolute top-0 right-0 flex items-center">
+            <UserMenu />
           </div>
         </div>
       </div>

@@ -14,9 +14,11 @@ interface SupportDialogProps {
   variant?: 'outline' | 'default';
   size?: 'sm' | 'default' | 'lg';
   className?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }: SupportDialogProps) => {
+const SupportDialog = ({ variant = 'outline', size = 'default', className = '', open, onOpenChange }: SupportDialogProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
@@ -24,6 +26,10 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+
+  // Use controlled state if provided, otherwise use internal state
+  const dialogOpen = open !== undefined ? open : isOpen;
+  const setDialogOpen = onOpenChange || setIsOpen;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,7 +78,7 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
       setSubject('');
       setDescription('');
       setUserEmail('');
-      setIsOpen(false);
+      setDialogOpen(false);
     } catch (error: any) {
       console.error('Error sending support email:', error);
       toast({
@@ -86,13 +92,15 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button variant={variant} size={size} className={className}>
-          <HelpCircle className="w-4 h-4 mr-2" />
-          Suporte
-        </Button>
-      </DialogTrigger>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {!open && (
+        <DialogTrigger asChild>
+          <Button variant={variant} size={size} className={className}>
+            <HelpCircle className="w-4 h-4 mr-2" />
+            Suporte
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -147,7 +155,7 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
             <Button 
               type="button" 
               variant="outline" 
-              onClick={() => setIsOpen(false)}
+              onClick={() => setDialogOpen(false)}
               className="flex-1"
             >
               Cancelar

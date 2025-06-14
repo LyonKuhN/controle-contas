@@ -44,7 +44,7 @@ const handler = async (req: Request): Promise<Response> => {
       },
       body: JSON.stringify({
         service_id: 'service_99hwcjp',
-        template_id: 'template_default', // You may need to create a template in EmailJS
+        template_id: 'template_nhw6xf2',
         user_id: 'a9S7JoGNsZByr0Pej',
         accessToken: 'gZ0SYUlZhi7kPr5JPvjJc',
         template_params: templateParams

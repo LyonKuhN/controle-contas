@@ -1,12 +1,7 @@
-
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { User } from "lucide-react";
-import { Link } from "react-router-dom";
 import NavigationIsland from "@/components/NavigationIsland";
 import MobileNavigation from "@/components/MobileNavigation";
-import ThemeToggle from "@/components/ThemeToggle";
-import SupportDialog from "@/components/SupportDialog";
+import UserMenu from "@/components/UserMenu";
 import { useAuth } from "@/hooks/useAuth";
 import { useDespesas } from "@/hooks/useDespesas";
 import { useReceitas } from "@/hooks/useReceitas";
@@ -62,26 +57,13 @@ const Dashboard = () => {
       <div className="hidden md:block">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-start mb-4">
-            {/* Left side - Support Button */}
+            {/* Left side - empty space for balance */}
             <div className="flex items-center">
-              <SupportDialog variant="outline" size="sm" />
             </div>
             
-            {/* Right side - Theme Toggle and Profile */}
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              {user && (
-                <Link to="/profile">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-foreground hover:bg-primary/10"
-                  >
-                    <User className="w-4 h-4" />
-                    <span className="hidden sm:inline">Perfil</span>
-                  </Button>
-                </Link>
-              )}
+            {/* Right side - User Menu */}
+            <div className="flex items-center">
+              <UserMenu />
             </div>
           </div>
           
@@ -95,7 +77,7 @@ const Dashboard = () => {
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-center">
             <h1 className="text-xl font-bold text-foreground">📊 Dashboard</h1>
-            <SupportDialog variant="outline" size="sm" />
+            <UserMenu />
           </div>
         </div>
       </div>
