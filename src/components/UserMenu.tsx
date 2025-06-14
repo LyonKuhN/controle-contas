@@ -3,18 +3,36 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { User, HelpCircle, Sun, Moon, Menu } from 'lucide-react';
+import { User, HelpCircle, Sun, Moon, Menu, LogOut } from 'lucide-react';
 import { useTheme } from '@/components/ThemeProvider';
 import { useAuth } from '@/hooks/useAuth';
 import SupportDialog from './SupportDialog';
+import { useToast } from '@/hooks/use-toast';
 
 const UserMenu = () => {
   const { theme, setTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [supportDialogOpen, setSupportDialogOpen] = useState(false);
+  const { toast } = useToast();
 
   const toggleTheme = () => {
     setTheme(theme === "light" ? "dark" : "light");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logout realizado",
+        description: "Você foi desconectado com sucesso."
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao fazer logout",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -52,6 +70,10 @@ const UserMenu = () => {
                   <User className="h-4 w-4 mr-2" />
                   Perfil
                 </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
               </DropdownMenuItem>
             </>
           )}

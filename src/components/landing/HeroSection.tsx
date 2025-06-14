@@ -1,16 +1,16 @@
 
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Star, TrendingUp, DollarSign, PieChart } from 'lucide-react';
+import { ArrowRight, CheckCircle, TrendingUp, DollarSign, PieChart } from 'lucide-react';
 
 const HeroSection = () => {
   return (
     <div className="container mx-auto px-4 py-16">
       <div className="text-center mb-20">
         {/* Badge de Oferta */}
-        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/20 to-accent/20 text-foreground border-2 border-primary/30 px-6 py-3 rounded-full mb-8 backdrop-blur-sm">
-          <Star className="w-4 h-4 text-primary" />
-          <span className="text-sm font-bold">🎉 3 DIAS GRÁTIS - Sem cartão de crédito</span>
+        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/50 dark:to-blue-950/50 text-foreground border border-emerald-200 dark:border-emerald-800 px-6 py-3 rounded-full mb-8 backdrop-blur-sm shadow-sm">
+          <CheckCircle className="w-4 h-4 text-emerald-600" />
+          <span className="text-sm font-semibold">Teste Gratuito de 3 Dias • Sem Cartão de Crédito</span>
         </div>
 
         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-6 leading-tight">
