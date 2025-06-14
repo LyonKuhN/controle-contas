@@ -40,7 +40,7 @@ const MainMenu = () => {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-background">
       {/* Desktop Layout */}
       <div className="hidden md:block">
         <div className="container mx-auto px-4 py-3">
@@ -56,7 +56,7 @@ const MainMenu = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-foreground hover:bg-primary/10"
+                    className="nav-island flex items-center gap-2 bg-background/80 border-border text-foreground hover:bg-accent hover:text-accent-foreground"
                   >
                     <User className="w-4 h-4" />
                     <span className="hidden sm:inline">Perfil</span>
@@ -93,7 +93,7 @@ const MainMenu = () => {
               LYONPAY
             </h1>
           </div>
-          <p className="text-lg text-white/60 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Gerencie suas finanças pessoais de forma simples e eficiente
           </p>
         </div>
@@ -102,20 +102,20 @@ const MainMenu = () => {
           {menuItems.map((item, index) => (
             <Link key={item.path} to={item.path} className="group">
               <Card 
-                className="menu-card-hover p-8 h-80 flex flex-col justify-between cursor-pointer"
+                className="menu-card-hover p-8 h-80 flex flex-col justify-between cursor-pointer bg-card text-card-foreground border-border hover:border-primary/50"
                 style={{
                   animationDelay: `${index * 100}ms`
                 }}
               >
                 <div className="space-y-4">
                   <div className="text-4xl mb-4">{item.icon}</div>
-                  <h3 className="text-2xl font-bold menu-text text-foreground">{item.title}</h3>
+                  <h3 className="text-2xl font-bold menu-text text-card-foreground">{item.title}</h3>
                   <p className="text-sm leading-relaxed menu-description text-muted-foreground">
                     {item.description}
                   </p>
                 </div>
                 <div className="mt-8">
-                  <span className="text-sm font-medium menu-text text-primary group-hover:text-white transition-colors duration-500">
+                  <span className="text-sm font-medium menu-text text-primary group-hover:text-primary transition-colors duration-500">
                     Explorar →
                   </span>
                 </div>
