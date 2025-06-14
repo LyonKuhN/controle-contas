@@ -1,8 +1,6 @@
 
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import ThemeToggle from '@/components/ThemeToggle';
-import SupportDialog from '@/components/SupportDialog';
 import UserMenu from '@/components/UserMenu';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -25,13 +23,10 @@ const LandingHeader = () => {
         
         <div className="flex gap-4 items-center">
           {user ? (
-            // Se o usuário estiver logado, mostra o UserMenu
             <UserMenu />
           ) : (
-            // Se não estiver logado, mostra os botões originais
             <>
-              <SupportDialog variant="outline" size="sm" />
-              <ThemeToggle />
+              <UserMenu />
               <Link to="/auth?mode=login">
                 <Button 
                   variant="outline" 

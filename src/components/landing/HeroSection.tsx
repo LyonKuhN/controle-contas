@@ -23,9 +23,9 @@ const HeroSection = () => {
         
         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-8">
           <Link to="/auth?mode=signup">
-            <Button size="lg" className="text-lg px-12 py-6 min-w-[250px] bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-bold shadow-2xl transition-all duration-300 transform hover:scale-105">
+            <Button size="lg" className="text-base px-8 py-4 max-w-xs bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-primary-foreground font-bold shadow-2xl transition-all duration-300 transform hover:scale-105">
               Começar 3 Dias Grátis
-              <ArrowRight className="ml-2 w-5 h-5" />
+              <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </Link>
         </div>

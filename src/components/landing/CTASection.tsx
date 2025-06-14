@@ -14,9 +14,9 @@ const CTASection = () => {
           Experimente por 3 dias grátis e veja como é fácil ter controle total do seu dinheiro.
         </p>
         <Link to="/auth?mode=signup">
-          <Button size="lg" variant="secondary" className="text-lg px-12 py-6 bg-background text-foreground hover:bg-background/90">
+          <Button size="lg" variant="secondary" className="text-base px-8 py-4 bg-background text-foreground hover:bg-background/90 max-w-xs mx-auto">
             Começar Agora - É Grátis
-            <ArrowRight className="ml-2 w-5 h-5" />
+            <ArrowRight className="ml-2 w-4 h-4" />
           </Button>
         </Link>
         <p className="text-sm text-primary-foreground/70 mt-4">
