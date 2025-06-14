@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus } from "lucide-react";
 import { useReceitas } from "@/hooks/useReceitas";
 import { useCategorias } from "@/hooks/useCategorias";
+import AddCategoriaDialog from "@/components/categorias/AddCategoriaDialog";
 
 const CadastroReceitas = () => {
   const [formData, setFormData] = useState({
@@ -16,6 +18,8 @@ const CadastroReceitas = () => {
     data_recebimento: '',
     observacoes: ''
   });
+
+  const [showAddCategoria, setShowAddCategoria] = useState(false);
 
   const { createReceita } = useReceitas();
   const { categorias } = useCategorias('receita');
@@ -51,76 +55,95 @@ const CadastroReceitas = () => {
   };
 
   return (
-    <Card className="p-6">
-      <h2 className="text-2xl font-bold mb-6">Cadastrar Nova Receita</h2>
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="descricao">Descrição *</Label>
-          <Input
-            id="descricao"
-            value={formData.descricao}
-            onChange={(e) => handleInputChange('descricao', e.target.value)}
-            placeholder="Ex: Salário"
-            required
-          />
-        </div>
+    <>
+      <Card className="p-6">
+        <h2 className="text-2xl font-bold mb-6">Cadastrar Nova Receita</h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <Label htmlFor="descricao">Descrição *</Label>
+            <Input
+              id="descricao"
+              value={formData.descricao}
+              onChange={(e) => handleInputChange('descricao', e.target.value)}
+              placeholder="Ex: Salário"
+              required
+            />
+          </div>
 
-        <div>
-          <Label htmlFor="valor">Valor *</Label>
-          <Input
-            id="valor"
-            type="number"
-            step="0.01"
-            value={formData.valor}
-            onChange={(e) => handleInputChange('valor', e.target.value)}
-            placeholder="0,00"
-            required
-          />
-        </div>
+          <div>
+            <Label htmlFor="valor">Valor *</Label>
+            <Input
+              id="valor"
+              type="number"
+              step="0.01"
+              value={formData.valor}
+              onChange={(e) => handleInputChange('valor', e.target.value)}
+              placeholder="0,00"
+              required
+            />
+          </div>
 
-        <div>
-          <Label htmlFor="categoria">Categoria *</Label>
-          <Select value={formData.categoria_id} onValueChange={(value) => handleInputChange('categoria_id', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione uma categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              {categorias.map((categoria) => (
-                <SelectItem key={categoria.id} value={categoria.id}>
-                  {categoria.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+          <div>
+            <Label htmlFor="categoria">Categoria *</Label>
+            <div className="flex gap-2">
+              <Select value={formData.categoria_id} onValueChange={(value) => handleInputChange('categoria_id', value)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categorias.map((categoria) => (
+                    <SelectItem key={categoria.id} value={categoria.id}>
+                      {categoria.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setShowAddCategoria(true)}
+                className="shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
 
-        <div>
-          <Label htmlFor="data_recebimento">Data de Recebimento *</Label>
-          <Input
-            id="data_recebimento"
-            type="date"
-            value={formData.data_recebimento}
-            onChange={(e) => handleInputChange('data_recebimento', e.target.value)}
-            required
-          />
-        </div>
+          <div>
+            <Label htmlFor="data_recebimento">Data de Recebimento *</Label>
+            <Input
+              id="data_recebimento"
+              type="date"
+              value={formData.data_recebimento}
+              onChange={(e) => handleInputChange('data_recebimento', e.target.value)}
+              required
+            />
+          </div>
 
-        <div>
-          <Label htmlFor="observacoes">Observações</Label>
-          <Input
-            id="observacoes"
-            value={formData.observacoes}
-            onChange={(e) => handleInputChange('observacoes', e.target.value)}
-            placeholder="Informações adicionais (opcional)"
-          />
-        </div>
+          <div>
+            <Label htmlFor="observacoes">Observações</Label>
+            <Input
+              id="observacoes"
+              value={formData.observacoes}
+              onChange={(e) => handleInputChange('observacoes', e.target.value)}
+              placeholder="Informações adicionais (opcional)"
+            />
+          </div>
 
-        <Button type="submit" className="w-full" disabled={createReceita.isPending}>
-          {createReceita.isPending ? 'Cadastrando...' : 'Cadastrar Receita'}
-        </Button>
-      </form>
-    </Card>
+          <Button type="submit" className="w-full" disabled={createReceita.isPending}>
+            {createReceita.isPending ? 'Cadastrando...' : 'Cadastrar Receita'}
+          </Button>
+        </form>
+      </Card>
+
+      <AddCategoriaDialog 
+        open={showAddCategoria}
+        onClose={() => setShowAddCategoria(false)}
+        tipo="receita"
+      />
+    </>
   );
 };
 

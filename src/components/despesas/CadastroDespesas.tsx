@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,9 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Plus } from "lucide-react";
 import { useDespesas } from "@/hooks/useDespesas";
 import { useCategorias } from "@/hooks/useCategorias";
 import TipoTooltip from "./TipoTooltip";
+import AddCategoriaDialog from "@/components/categorias/AddCategoriaDialog";
 
 const CadastroDespesas = () => {
   const [formData, setFormData] = useState({
@@ -23,6 +24,8 @@ const CadastroDespesas = () => {
     valor_total: '',
     tipo_valor: 'total' as 'total' | 'parcela'
   });
+
+  const [showAddCategoria, setShowAddCategoria] = useState(false);
 
   const { createDespesa } = useDespesas();
   const { categorias } = useCategorias('despesa');
@@ -157,174 +160,190 @@ const CadastroDespesas = () => {
   };
 
   return (
-    <Card className="p-6">
-      <h2 className="text-2xl font-bold mb-6">Cadastrar Nova Despesa</h2>
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="descricao">Descrição *</Label>
-          <Input
-            id="descricao"
-            value={formData.descricao}
-            onChange={(e) => handleInputChange('descricao', e.target.value)}
-            placeholder="Ex: Energia elétrica"
-            required
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="categoria">Categoria *</Label>
-          <Select value={formData.categoria_id} onValueChange={(value) => handleInputChange('categoria_id', value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione uma categoria" />
-            </SelectTrigger>
-            <SelectContent>
-              {categorias.map((categoria) => (
-                <SelectItem key={categoria.id} value={categoria.id}>
-                  {categoria.nome}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <Label htmlFor="tipo">Tipo de Despesa *</Label>
-            <TipoTooltip />
-          </div>
-          <Select value={formData.tipo} onValueChange={handleTipoChange}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione o tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="fixa">🔒 Fixa (modelo)</SelectItem>
-              <SelectItem value="variavel">🔄 Variável</SelectItem>
-              <SelectItem value="parcelada">📅 Parcelada</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Campo de dia de vencimento para despesas fixas */}
-        {formData.tipo === 'fixa' && (
+    <>
+      <Card className="p-6">
+        <h2 className="text-2xl font-bold mb-6">Cadastrar Nova Despesa</h2>
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="dia_vencimento">Dia do Vencimento *</Label>
-            <Select value={formData.dia_vencimento} onValueChange={(value) => handleInputChange('dia_vencimento', value)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione o dia do mês" />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 31 }, (_, i) => i + 1).map((dia) => (
-                  <SelectItem key={dia} value={dia.toString()}>
-                    Dia {dia}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-muted-foreground mt-1">
-              Esta despesa será salva como modelo. Use o botão "Gerar Despesas Fixas" no controle de contas para criar as despesas do mês.
-            </p>
-          </div>
-        )}
-
-        {/* Campos específicos para despesas parceladas */}
-        {formData.tipo === 'parcelada' && (
-          <>
-            <div>
-              <Label htmlFor="numero_parcelas">Número de Parcelas *</Label>
-              <Input
-                id="numero_parcelas"
-                type="number"
-                min="2"
-                value={formData.numero_parcelas}
-                onChange={(e) => handleInputChange('numero_parcelas', e.target.value)}
-                placeholder="Ex: 12"
-                required
-              />
-            </div>
-
-            <div>
-              <Label>O valor informado é: *</Label>
-              <RadioGroup
-                value={formData.tipo_valor}
-                onValueChange={(value) => handleInputChange('tipo_valor', value)}
-                className="flex flex-row space-x-6 mt-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="total" id="total" />
-                  <Label htmlFor="total">Valor total</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="parcela" id="parcela" />
-                  <Label htmlFor="parcela">Valor por parcela</Label>
-                </div>
-              </RadioGroup>
-            </div>
-          </>
-        )}
-
-        <div>
-          <Label htmlFor="valor">
-            {formData.tipo === 'parcelada' 
-              ? `Valor ${formData.tipo_valor === 'total' ? 'Total' : 'por Parcela'} *`
-              : 'Valor *'
-            }
-          </Label>
-          <Input
-            id="valor"
-            type="number"
-            step="0.01"
-            value={formData.valor}
-            onChange={(e) => handleInputChange('valor', e.target.value)}
-            placeholder="0,00"
-            required
-          />
-          {formData.tipo === 'parcelada' && formData.valor && formData.numero_parcelas && (
-            <p className="text-sm text-muted-foreground mt-1">
-              {formData.tipo_valor === 'total' 
-                ? `Valor por parcela: R$ ${(parseFloat(formData.valor) / parseInt(formData.numero_parcelas || '1')).toFixed(2)}`
-                : `Valor total: R$ ${(parseFloat(formData.valor) * parseInt(formData.numero_parcelas || '1')).toFixed(2)}`
-              }
-            </p>
-          )}
-        </div>
-
-        {/* Data de vencimento para despesas variáveis e primeira parcela para parceladas */}
-        {formData.tipo !== 'fixa' && (
-          <div>
-            <Label htmlFor="data_vencimento">
-              {formData.tipo === 'parcelada' ? 'Data da Primeira Parcela *' : 'Data de Vencimento *'}
-            </Label>
+            <Label htmlFor="descricao">Descrição *</Label>
             <Input
-              id="data_vencimento"
-              type="date"
-              value={formData.data_vencimento}
-              onChange={(e) => handleInputChange('data_vencimento', e.target.value)}
+              id="descricao"
+              value={formData.descricao}
+              onChange={(e) => handleInputChange('descricao', e.target.value)}
+              placeholder="Ex: Energia elétrica"
               required
             />
-            {formData.tipo === 'parcelada' && (
+          </div>
+
+          <div>
+            <Label htmlFor="categoria">Categoria *</Label>
+            <div className="flex gap-2">
+              <Select value={formData.categoria_id} onValueChange={(value) => handleInputChange('categoria_id', value)}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue placeholder="Selecione uma categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categorias.map((categoria) => (
+                    <SelectItem key={categoria.id} value={categoria.id}>
+                      {categoria.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setShowAddCategoria(true)}
+                className="shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Label htmlFor="tipo">Tipo de Despesa *</Label>
+              <TipoTooltip />
+            </div>
+            <Select value={formData.tipo} onValueChange={handleTipoChange}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fixa">🔒 Fixa (modelo)</SelectItem>
+                <SelectItem value="variavel">🔄 Variável</SelectItem>
+                <SelectItem value="parcelada">📅 Parcelada</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {formData.tipo === 'fixa' && (
+            <div>
+              <Label htmlFor="dia_vencimento">Dia do Vencimento *</Label>
+              <Select value={formData.dia_vencimento} onValueChange={(value) => handleInputChange('dia_vencimento', value)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o dia do mês" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 31 }, (_, i) => i + 1).map((dia) => (
+                    <SelectItem key={dia} value={dia.toString()}>
+                      Dia {dia}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <p className="text-sm text-muted-foreground mt-1">
-                As demais parcelas serão criadas automaticamente, mês a mês
+                Esta despesa será salva como modelo. Use o botão "Gerar Despesas Fixas" no controle de contas para criar as despesas do mês.
+              </p>
+            </div>
+          )}
+
+          {formData.tipo === 'parcelada' && (
+            <>
+              <div>
+                <Label htmlFor="numero_parcelas">Número de Parcelas *</Label>
+                <Input
+                  id="numero_parcelas"
+                  type="number"
+                  min="2"
+                  value={formData.numero_parcelas}
+                  onChange={(e) => handleInputChange('numero_parcelas', e.target.value)}
+                  placeholder="Ex: 12"
+                  required
+                />
+              </div>
+
+              <div>
+                <Label>O valor informado é: *</Label>
+                <RadioGroup
+                  value={formData.tipo_valor}
+                  onValueChange={(value) => handleInputChange('tipo_valor', value)}
+                  className="flex flex-row space-x-6 mt-2"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="total" id="total" />
+                    <Label htmlFor="total">Valor total</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="parcela" id="parcela" />
+                    <Label htmlFor="parcela">Valor por parcela</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </>
+          )}
+
+          <div>
+            <Label htmlFor="valor">
+              {formData.tipo === 'parcelada' 
+                ? `Valor ${formData.tipo_valor === 'total' ? 'Total' : 'por Parcela'} *`
+                : 'Valor *'
+              }
+            </Label>
+            <Input
+              id="valor"
+              type="number"
+              step="0.01"
+              value={formData.valor}
+              onChange={(e) => handleInputChange('valor', e.target.value)}
+              placeholder="0,00"
+              required
+            />
+            {formData.tipo === 'parcelada' && formData.valor && formData.numero_parcelas && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {formData.tipo_valor === 'total' 
+                  ? `Valor por parcela: R$ ${(parseFloat(formData.valor) / parseInt(formData.numero_parcelas || '1')).toFixed(2)}`
+                  : `Valor total: R$ ${(parseFloat(formData.valor) * parseInt(formData.numero_parcelas || '1')).toFixed(2)}`
+                }
               </p>
             )}
           </div>
-        )}
 
-        <div>
-          <Label htmlFor="observacoes">Observações</Label>
-          <Input
-            id="observacoes"
-            value={formData.observacoes}
-            onChange={(e) => handleInputChange('observacoes', e.target.value)}
-            placeholder="Informações adicionais (opcional)"
-          />
-        </div>
+          {formData.tipo !== 'fixa' && (
+            <div>
+              <Label htmlFor="data_vencimento">
+                {formData.tipo === 'parcelada' ? 'Data da Primeira Parcela *' : 'Data de Vencimento *'}
+              </Label>
+              <Input
+                id="data_vencimento"
+                type="date"
+                value={formData.data_vencimento}
+                onChange={(e) => handleInputChange('data_vencimento', e.target.value)}
+                required
+              />
+              {formData.tipo === 'parcelada' && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  As demais parcelas serão criadas automaticamente, mês a mês
+                </p>
+              )}
+            </div>
+          )}
 
-        <Button type="submit" className="w-full" disabled={createDespesa.isPending}>
-          {createDespesa.isPending ? 'Cadastrando...' : 'Cadastrar Despesa'}
-        </Button>
-      </form>
-    </Card>
+          <div>
+            <Label htmlFor="observacoes">Observações</Label>
+            <Input
+              id="observacoes"
+              value={formData.observacoes}
+              onChange={(e) => handleInputChange('observacoes', e.target.value)}
+              placeholder="Informações adicionais (opcional)"
+            />
+          </div>
+
+          <Button type="submit" className="w-full" disabled={createDespesa.isPending}>
+            {createDespesa.isPending ? 'Cadastrando...' : 'Cadastrar Despesa'}
+          </Button>
+        </form>
+      </Card>
+
+      <AddCategoriaDialog 
+        open={showAddCategoria}
+        onClose={() => setShowAddCategoria(false)}
+        tipo="despesa"
+      />
+    </>
   );
 };
 
