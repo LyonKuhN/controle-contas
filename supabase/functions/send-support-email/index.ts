@@ -27,52 +27,41 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("User email:", userEmail);
     console.log("User name:", userName);
 
-    // Prepare email content with user information
-    const emailBody = `
-Assunto: ${subject}
-
-Email do usuário: ${userEmail}
-Nome do usuário: ${userName || 'Não informado'}
-
-Descrição:
-${description}
-
----
-Email enviado através do sistema de suporte LYONPAY
-Data: ${new Date().toLocaleString('pt-BR')}
-    `;
-
-    // Send email using SMTP
-    const emailData = {
-      from: "adm@lyonpay.com",
-      to: "adm@lyonpay.com",
-      subject: `[SUPORTE LYONPAY] ${subject}`,
-      text: emailBody,
-      auth: {
-        username: "adm@lyonpay.com",
-        password: "Herikana1705@",
-      },
-      smtp: {
-        host: "smtp.hostinger.com",
-        port: 465,
-        secure: true, // SSL
-      }
+    // Prepare EmailJS template parameters
+    const templateParams = {
+      from_name: userName || 'Usuário',
+      from_email: userEmail,
+      subject: subject,
+      message: description,
+      to_email: 'adm@lyonpay.com'
     };
 
-    // For now, we'll simulate the email sending
-    // In a real implementation, you would use a proper SMTP library or service
-    console.log("Email data prepared:", {
-      to: emailData.to,
-      from: emailData.from,
-      subject: emailData.subject,
-      userEmail: userEmail,
-      userName: userName
+    // Send email using EmailJS API
+    const emailJSResponse = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        service_id: 'service_99hwcjp',
+        template_id: 'template_default', // You may need to create a template in EmailJS
+        user_id: 'a9S7JoGNsZByr0Pej',
+        accessToken: 'gZ0SYUlZhi7kPr5JPvjJc',
+        template_params: templateParams
+      })
     });
 
-    // Simulate successful email sending
-    // Note: In production, you would need to use a proper SMTP service
-    // like Resend, SendGrid, or implement actual SMTP functionality
-    
+    console.log("EmailJS Response Status:", emailJSResponse.status);
+
+    if (!emailJSResponse.ok) {
+      const errorText = await emailJSResponse.text();
+      console.error("EmailJS Error:", errorText);
+      throw new Error(`EmailJS error: ${emailJSResponse.status} - ${errorText}`);
+    }
+
+    const emailJSResult = await emailJSResponse.text();
+    console.log("EmailJS Success:", emailJSResult);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
