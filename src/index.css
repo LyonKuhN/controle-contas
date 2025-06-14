@@ -48,42 +48,42 @@
   }
 
   .light {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --background: 0 0% 98%;
+    --foreground: 0 0% 5%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 0 0% 5%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
+    --popover-foreground: 0 0% 5%;
 
-    --primary: 45 100% 50%;
+    --primary: 45 100% 45%;
     --primary-foreground: 0 0% 98%;
 
-    --secondary: 45 100% 96%;
-    --secondary-foreground: 0 0% 9%;
+    --secondary: 45 30% 90%;
+    --secondary-foreground: 0 0% 15%;
 
-    --muted: 45 100% 96%;
-    --muted-foreground: 0 0% 45.1%;
+    --muted: 45 30% 95%;
+    --muted-foreground: 0 0% 40%;
 
-    --accent: 38 100% 50%;
-    --accent-foreground: 0 0% 9%;
+    --accent: 38 100% 45%;
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 45 100% 89%;
-    --input: 45 100% 89%;
-    --ring: 45 100% 50%;
+    --border: 45 30% 82%;
+    --input: 45 30% 82%;
+    --ring: 45 100% 45%;
 
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 3.9%;
-    --sidebar-primary: 45 100% 50%;
+    --sidebar-foreground: 0 0% 5%;
+    --sidebar-primary: 45 100% 45%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 45 100% 96%;
-    --sidebar-accent-foreground: 0 0% 9%;
-    --sidebar-border: 45 100% 89%;
-    --sidebar-ring: 45 100% 50%;
+    --sidebar-accent: 45 30% 90%;
+    --sidebar-accent-foreground: 0 0% 15%;
+    --sidebar-border: 45 30% 82%;
+    --sidebar-ring: 45 100% 45%;
   }
 }
 
@@ -100,7 +100,7 @@
   }
 
   .light body {
-    background: linear-gradient(135deg, #ffffff 0%, #fffef0 50%, #ffd700 100%);
+    background: linear-gradient(135deg, #fafafa 0%, #fffbf0 50%, #f5d000 100%);
   }
 }
 
@@ -120,6 +120,11 @@
     border-radius: 20px;
   }
 
+  .light .nav-island {
+    background: rgba(245, 208, 0, 0.15);
+    border: 1px solid rgba(245, 208, 0, 0.3);
+  }
+
   .menu-card-hover {
     @apply transition-all duration-500 hover:scale-105 hover:shadow-xl;
     background: rgba(34, 34, 34, 0.8);
@@ -128,8 +133,9 @@
   }
 
   .light .menu-card-hover {
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(255, 215, 0, 0.2);
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(245, 208, 0, 0.3);
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   }
 
   .menu-card-hover:hover {
@@ -143,5 +149,13 @@
 
   .menu-card-hover:hover .menu-description {
     @apply text-black/80;
+  }
+
+  .light .menu-text {
+    @apply text-gray-800;
+  }
+
+  .light .menu-description {
+    @apply text-gray-600;
   }
 }

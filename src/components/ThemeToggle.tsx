@@ -11,7 +11,7 @@ const ThemeToggle = () => {
       variant="outline"
       size="sm"
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="nav-island bg-transparent border-primary/20 text-white/80 hover:text-white hover:bg-white/20"
+      className="nav-island bg-transparent border-primary/20 hover:bg-primary/10 dark:text-white/80 dark:hover:text-white light:text-gray-700 light:hover:text-gray-900"
     >
       <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
       <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
