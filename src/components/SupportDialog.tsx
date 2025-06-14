@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from '@/hooks/use-toast';
 import { HelpCircle, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SupportDialogProps {
   variant?: 'outline' | 'default';
@@ -19,8 +20,10 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
   const [isOpen, setIsOpen] = useState(false);
   const [subject, setSubject] = useState('');
   const [description, setDescription] = useState('');
+  const [userEmail, setUserEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,17 +31,33 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
     if (!subject.trim() || !description.trim()) {
       toast({
         title: "Erro",
-        description: "Por favor, preencha todos os campos.",
+        description: "Por favor, preencha todos os campos obrigatórios.",
         variant: "destructive"
       });
       return;
     }
 
+    if (!user && !userEmail.trim()) {
+      toast({
+        title: "Erro",
+        description: "Por favor, informe seu email para contato.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const emailToUse = user?.email || userEmail;
+
     setIsLoading(true);
     
     try {
       const { data, error } = await supabase.functions.invoke('send-support-email', {
-        body: { subject, description }
+        body: { 
+          subject, 
+          description,
+          userEmail: emailToUse,
+          userName: user?.user_metadata?.full_name || 'Usuário'
+        }
       });
 
       if (error) {
@@ -52,6 +71,7 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
       
       setSubject('');
       setDescription('');
+      setUserEmail('');
       setIsOpen(false);
     } catch (error: any) {
       console.error('Error sending support email:', error);
@@ -85,8 +105,22 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {!user && (
+            <div>
+              <Label htmlFor="userEmail">Seu Email *</Label>
+              <Input
+                id="userEmail"
+                type="email"
+                placeholder="seu@email.com"
+                value={userEmail}
+                onChange={(e) => setUserEmail(e.target.value)}
+                required
+              />
+            </div>
+          )}
+          
           <div>
-            <Label htmlFor="subject">Assunto</Label>
+            <Label htmlFor="subject">Assunto *</Label>
             <Input
               id="subject"
               type="text"
@@ -98,7 +132,7 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
           </div>
           
           <div>
-            <Label htmlFor="description">Descrição</Label>
+            <Label htmlFor="description">Descrição *</Label>
             <Textarea
               id="description"
               placeholder="Descreva detalhadamente sua dúvida ou problema..."

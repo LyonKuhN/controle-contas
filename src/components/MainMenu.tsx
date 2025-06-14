@@ -43,13 +43,8 @@ const MainMenu = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Mobile Layout */}
-      {isMobile ? (
-        <div className="container mx-auto px-4 py-3">
-          <MobileNavigation />
-        </div>
-      ) : (
-        /* Desktop Layout */
+      {/* Desktop Layout */}
+      <div className="hidden md:block">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-start mb-4">
             {/* Left side - Support Button */}
@@ -78,9 +73,19 @@ const MainMenu = () => {
           {/* Navigation Island - Centered */}
           <NavigationIsland />
         </div>
-      )}
+      </div>
 
-      <div className="container mx-auto px-4">
+      {/* Mobile Layout - Top Header */}
+      <div className="md:hidden">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex justify-between items-center">
+            <h1 className="text-xl font-bold text-foreground">LYONPAY</h1>
+            <SupportDialog variant="outline" size="sm" />
+          </div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 pb-24 md:pb-0">
         {/* Header with Subtle Title */}
         <div className="text-center mb-16">
           <div className="flex items-center justify-center gap-4 mb-6">
@@ -125,6 +130,9 @@ const MainMenu = () => {
           ))}
         </div>
       </div>
+
+      {/* Mobile Navigation */}
+      <MobileNavigation />
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
@@ -57,13 +58,8 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-accent/20">
-      {/* Mobile Layout */}
-      {isMobile ? (
-        <div className="container mx-auto px-4 py-3">
-          <MobileNavigation />
-        </div>
-      ) : (
-        /* Desktop Layout */
+      {/* Desktop Layout */}
+      <div className="hidden md:block">
         <div className="container mx-auto px-4 py-3">
           <div className="flex justify-between items-start mb-4">
             {/* Left side - Support Button */}
@@ -92,11 +88,21 @@ const Dashboard = () => {
           {/* Navigation Island - Centered */}
           <NavigationIsland />
         </div>
-      )}
+      </div>
+
+      {/* Mobile Layout - Top Header */}
+      <div className="md:hidden">
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex justify-between items-center">
+            <h1 className="text-xl font-bold text-foreground">📊 Dashboard</h1>
+            <SupportDialog variant="outline" size="sm" />
+          </div>
+        </div>
+      </div>
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pb-24 md:pb-8">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-foreground mb-4">📊 Dashboard Financeiro</h1>
+          <h1 className="text-4xl font-bold text-foreground mb-4 hidden md:block">📊 Dashboard Financeiro</h1>
           <p className="text-muted-foreground">Análise completa das suas finanças</p>
         </div>
         
@@ -183,6 +189,9 @@ const Dashboard = () => {
           </Card>
         )}
       </div>
+
+      {/* Mobile Navigation */}
+      <MobileNavigation />
     </div>
   );
 };

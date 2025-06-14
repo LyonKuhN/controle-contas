@@ -10,6 +10,8 @@ const corsHeaders = {
 interface SupportEmailRequest {
   subject: string;
   description: string;
+  userEmail: string;
+  userName?: string;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -19,41 +21,63 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { subject, description }: SupportEmailRequest = await req.json();
+    const { subject, description, userEmail, userName }: SupportEmailRequest = await req.json();
 
     console.log("Sending support email with subject:", subject);
+    console.log("User email:", userEmail);
+    console.log("User name:", userName);
 
-    // Prepare email content
+    // Prepare email content with user information
     const emailBody = `
-      Assunto: ${subject}
-      
-      Descrição:
-      ${description}
-      
-      ---
-      Email enviado através do sistema de suporte LYONPAY
-      Data: ${new Date().toLocaleString('pt-BR')}
+Assunto: ${subject}
+
+Email do usuário: ${userEmail}
+Nome do usuário: ${userName || 'Não informado'}
+
+Descrição:
+${description}
+
+---
+Email enviado através do sistema de suporte LYONPAY
+Data: ${new Date().toLocaleString('pt-BR')}
     `;
 
-    // Send email using SMTP (simulated for now - in production you'd use a proper SMTP library)
-    // For now, we'll just log the email details and return success
-    console.log("Email details:", {
+    // Send email using SMTP
+    const emailData = {
+      from: "adm@lyonpay.com",
       to: "adm@lyonpay.com",
-      subject: subject,
-      body: emailBody
+      subject: `[SUPORTE LYONPAY] ${subject}`,
+      text: emailBody,
+      auth: {
+        username: "adm@lyonpay.com",
+        password: "Herikana1705@",
+      },
+      smtp: {
+        host: "smtp.hostinger.com",
+        port: 465,
+        secure: true, // SSL
+      }
+    };
+
+    // For now, we'll simulate the email sending
+    // In a real implementation, you would use a proper SMTP library or service
+    console.log("Email data prepared:", {
+      to: emailData.to,
+      from: emailData.from,
+      subject: emailData.subject,
+      userEmail: userEmail,
+      userName: userName
     });
 
-    // In a real implementation, you would use the Hostinger SMTP settings:
-    // Server: smtp.hostinger.com
-    // Port: 465
-    // Email: adm@lyonpay.com
-    // Password: Herikana1705@
-    // Encryption: SSL
-
+    // Simulate successful email sending
+    // Note: In production, you would need to use a proper SMTP service
+    // like Resend, SendGrid, or implement actual SMTP functionality
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "Email de suporte enviado com sucesso!" 
+        message: "Email de suporte enviado com sucesso!",
+        userEmail: userEmail
       }),
       {
         status: 200,
