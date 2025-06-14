@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { HelpCircle, Mail } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SupportDialogProps {
   variant?: 'outline' | 'default';
@@ -36,29 +37,24 @@ const SupportDialog = ({ variant = 'outline', size = 'default', className = '' }
     setIsLoading(true);
     
     try {
-      // Simulate sending email - in a real app, you'd send this to your backend
-      const emailBody = `
-        Assunto: ${subject}
-        
-        Descrição:
-        ${description}
-        
-        ---
-        Email enviado através do sistema de suporte LYONPAY
-      `;
-      
-      const mailtoLink = `mailto:adm@lyonpay.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
-      window.location.href = mailtoLink;
-      
+      const { data, error } = await supabase.functions.invoke('send-support-email', {
+        body: { subject, description }
+      });
+
+      if (error) {
+        throw error;
+      }
+
       toast({
         title: "Email de suporte enviado!",
-        description: "Seu email foi direcionado para adm@lyonpay.com. Responderemos em breve.",
+        description: "Recebemos sua mensagem e responderemos em breve através do email adm@lyonpay.com.",
       });
       
       setSubject('');
       setDescription('');
       setIsOpen(false);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Error sending support email:', error);
       toast({
         title: "Erro",
         description: "Erro ao enviar email de suporte. Tente novamente.",

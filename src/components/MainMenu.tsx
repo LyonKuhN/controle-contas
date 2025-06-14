@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
 import NavigationIsland from "./NavigationIsland";
+import MobileNavigation from "./MobileNavigation";
 import ThemeToggle from "./ThemeToggle";
 import SupportDialog from "./SupportDialog";
 import { useAuth } from "@/hooks/useAuth";
@@ -44,30 +45,8 @@ const MainMenu = () => {
     <div className="min-h-screen">
       {/* Mobile Layout */}
       {isMobile ? (
-        <div className="container mx-auto px-4 py-3 space-y-4">
-          {/* Top bar with support, theme and profile on mobile */}
-          <div className="flex justify-between items-center">
-            <SupportDialog variant="outline" size="sm" />
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              {user && (
-                <Link to="/profile">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-foreground hover:bg-primary/10"
-                  >
-                    <User className="w-4 h-4" />
-                  </Button>
-                </Link>
-              )}
-            </div>
-          </div>
-          
-          {/* Navigation Island centered on mobile */}
-          <div className="flex justify-center">
-            <NavigationIsland />
-          </div>
+        <div className="container mx-auto px-4 py-3">
+          <MobileNavigation />
         </div>
       ) : (
         /* Desktop Layout */
