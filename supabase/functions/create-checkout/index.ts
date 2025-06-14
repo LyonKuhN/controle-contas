@@ -26,26 +26,37 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", { apiVersion: "2023-10-16" });
+    
+    // Check if customer already exists
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId;
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
     }
 
+    // Get the Premium product from Stripe
+    const product = await stripe.products.retrieve("prod_SUz13U5Rif3qEr");
+    
+    // Get the price for this product
+    const prices = await stripe.prices.list({
+      product: "prod_SUz13U5Rif3qEr",
+      active: true,
+      type: "recurring",
+      limit: 1,
+    });
+
+    if (prices.data.length === 0) {
+      throw new Error("No active price found for Premium product");
+    }
+
+    const priceId = prices.data[0].id;
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
-          price_data: {
-            currency: "brl",
-            product_data: { 
-              name: "LYONPAY Premium",
-              description: "Acesso completo a todas as funcionalidades do LYONPAY"
-            },
-            unit_amount: 2990, // R$ 29,90
-            recurring: { interval: "month" },
-          },
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -53,6 +64,10 @@ serve(async (req) => {
       success_url: `${req.headers.get("origin")}/?success=true`,
       cancel_url: `${req.headers.get("origin")}/?canceled=true`,
       allow_promotion_codes: true,
+      metadata: {
+        user_id: user.id,
+        user_email: user.email,
+      },
     });
 
     return new Response(JSON.stringify({ url: session.url }), {
