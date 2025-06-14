@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -37,6 +36,7 @@ export const useDespesas = () => {
           *,
           categoria:categorias(nome, cor)
         `)
+        .eq('is_modelo', false) // Filtrar apenas despesas que não são modelos
         .order('data_vencimento', { ascending: true });
 
       if (error) {
@@ -58,11 +58,9 @@ export const useDespesas = () => {
         throw new Error('Usuário não autenticado');
       }
 
-      // Para despesas fixas, marcar como modelo apenas se is_modelo for explicitamente true
       const despesaData = {
         ...despesa,
-        user_id: user.id,
-        is_modelo: despesa.tipo === 'fixa' && despesa.is_modelo === true
+        user_id: user.id
       };
 
       const { data, error } = await supabase

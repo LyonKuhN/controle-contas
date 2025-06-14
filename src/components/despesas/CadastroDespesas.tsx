@@ -93,11 +93,11 @@ const CadastroDespesas = () => {
     let valorTotal = valorFinal;
     let dataVencimento = formData.data_vencimento;
 
-    // Para despesas fixas, criar uma data modelo usando o dia selecionado no primeiro dia do ano 2000 (data fictícia para modelo)
+    // Para despesas fixas, salvar apenas o dia do vencimento de forma especial
     if (formData.tipo === 'fixa') {
       const diaVencimento = parseInt(formData.dia_vencimento);
-      // Usar uma data fictícia apenas para armazenar o dia do vencimento
-      dataVencimento = `2000-01-${String(diaVencimento).padStart(2, '0')}`;
+      // Usar formato especial para identificar que é um modelo: 'MODELO-DD'
+      dataVencimento = `1900-01-${String(diaVencimento).padStart(2, '0')}`;
     }
 
     // Calcular valores para despesas parceladas
@@ -124,16 +124,19 @@ const CadastroDespesas = () => {
 
     try {
       if (formData.tipo === 'fixa') {
-        // Criar apenas uma despesa modelo para despesas fixas (não gerar para nenhum mês)
+        // Criar apenas uma despesa modelo para despesas fixas
         await createDespesa.mutateAsync({
           ...despesaBase,
           data_vencimento: dataVencimento,
           parcela_atual: undefined,
-          is_modelo: true // Marcar explicitamente como modelo
+          is_modelo: true
         });
       } else if (formData.tipo === 'parcelada') {
         // Criar todas as parcelas automaticamente
-        await createParcelasDespesa(despesaBase, parseInt(formData.numero_parcelas), dataVencimento);
+        await createParcelasDespesa({
+          ...despesaBase,
+          is_modelo: false
+        }, parseInt(formData.numero_parcelas), dataVencimento);
       } else {
         // Criar despesa única (variável)
         await createDespesa.mutateAsync({
