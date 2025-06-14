@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
@@ -10,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDespesas } from "@/hooks/useDespesas";
 import { useReceitas } from "@/hooks/useReceitas";
 import { useCategorias } from "@/hooks/useCategorias";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const Dashboard = () => {
@@ -17,6 +17,7 @@ const Dashboard = () => {
   const { despesas } = useDespesas();
   const { receitas } = useReceitas();
   const { categorias } = useCategorias();
+  const isMobile = useIsMobile();
 
   // Calcular totais
   const totalDespesas = despesas.reduce((acc, despesa) => acc + Number(despesa.valor), 0);
@@ -55,35 +56,64 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-accent/20">
-      {/* Top Actions Bar - Mobile Friendly */}
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex justify-between items-start mb-4">
-          {/* Left side - Support Button */}
-          <div className="flex items-center">
+      {/* Mobile Layout */}
+      {isMobile ? (
+        <div className="container mx-auto px-4 py-3 space-y-4">
+          {/* Top bar with support, theme and profile on mobile */}
+          <div className="flex justify-between items-center">
             <SupportDialog variant="outline" size="sm" />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              {user && (
+                <Link to="/profile">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-foreground hover:bg-primary/10"
+                  >
+                    <User className="w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
           
-          {/* Right side - Theme Toggle and Profile */}
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            {user && (
-              <Link to="/profile">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-foreground hover:bg-primary/10"
-                >
-                  <User className="w-4 h-4" />
-                  <span className="hidden sm:inline">Perfil</span>
-                </Button>
-              </Link>
-            )}
+          {/* Navigation Island centered on mobile */}
+          <div className="flex justify-center">
+            <NavigationIsland />
           </div>
         </div>
-        
-        {/* Navigation Island - Centered */}
-        <NavigationIsland />
-      </div>
+      ) : (
+        /* Desktop Layout */
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex justify-between items-start mb-4">
+            {/* Left side - Support Button */}
+            <div className="flex items-center">
+              <SupportDialog variant="outline" size="sm" />
+            </div>
+            
+            {/* Right side - Theme Toggle and Profile */}
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              {user && (
+                <Link to="/profile">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-foreground hover:bg-primary/10"
+                  >
+                    <User className="w-4 h-4" />
+                    <span className="hidden sm:inline">Perfil</span>
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+          
+          {/* Navigation Island - Centered */}
+          <NavigationIsland />
+        </div>
+      )}
       
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">

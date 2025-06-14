@@ -7,6 +7,7 @@ import NavigationIsland from "./NavigationIsland";
 import ThemeToggle from "./ThemeToggle";
 import SupportDialog from "./SupportDialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const menuItems = [
   {
@@ -37,38 +38,68 @@ const menuItems = [
 
 const MainMenu = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
 
   return (
     <div className="min-h-screen">
-      {/* Top Actions Bar - Mobile Friendly */}
-      <div className="container mx-auto px-4 py-3">
-        <div className="flex justify-between items-start mb-4">
-          {/* Left side - Support Button */}
-          <div className="flex items-center">
+      {/* Mobile Layout */}
+      {isMobile ? (
+        <div className="container mx-auto px-4 py-3 space-y-4">
+          {/* Top bar with support, theme and profile on mobile */}
+          <div className="flex justify-between items-center">
             <SupportDialog variant="outline" size="sm" />
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              {user && (
+                <Link to="/profile">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-foreground hover:bg-primary/10"
+                  >
+                    <User className="w-4 h-4" />
+                  </Button>
+                </Link>
+              )}
+            </div>
           </div>
           
-          {/* Right side - Theme Toggle and Profile */}
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            {user && (
-              <Link to="/profile">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-foreground hover:bg-primary/10"
-                >
-                  <User className="w-4 h-4" />
-                  <span className="hidden sm:inline">Perfil</span>
-                </Button>
-              </Link>
-            )}
+          {/* Navigation Island centered on mobile */}
+          <div className="flex justify-center">
+            <NavigationIsland />
           </div>
         </div>
-        
-        {/* Navigation Island - Centered */}
-        <NavigationIsland />
-      </div>
+      ) : (
+        /* Desktop Layout */
+        <div className="container mx-auto px-4 py-3">
+          <div className="flex justify-between items-start mb-4">
+            {/* Left side - Support Button */}
+            <div className="flex items-center">
+              <SupportDialog variant="outline" size="sm" />
+            </div>
+            
+            {/* Right side - Theme Toggle and Profile */}
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              {user && (
+                <Link to="/profile">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-foreground hover:bg-primary/10"
+                  >
+                    <User className="w-4 h-4" />
+                    <span className="hidden sm:inline">Perfil</span>
+                  </Button>
+                </Link>
+              )}
+            </div>
+          </div>
+          
+          {/* Navigation Island - Centered */}
+          <NavigationIsland />
+        </div>
+      )}
 
       <div className="container mx-auto px-4">
         {/* Header with Subtle Title */}
