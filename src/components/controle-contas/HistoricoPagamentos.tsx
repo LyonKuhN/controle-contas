@@ -67,24 +67,25 @@ const HistoricoPagamentos = () => {
           return false;
         }
         
-        // Se a categoria tem um ID, comparar com o ID
-        if (typeof despesa.categoria === 'object' && despesa.categoria.id) {
-          const match = despesa.categoria.id === filtros.categoria;
-          console.log('Comparando IDs:', despesa.categoria.id, '===', filtros.categoria, '=', match);
+        // Verificar se a categoria tem um ID (usando type assertion segura)
+        const categoria = despesa.categoria as any;
+        if (categoria && typeof categoria === 'object' && 'id' in categoria) {
+          const match = categoria.id === filtros.categoria;
+          console.log('Comparando IDs:', categoria.id, '===', filtros.categoria, '=', match);
           return match;
         }
         
         // Se a categoria tem um nome, comparar com o nome
-        if (typeof despesa.categoria === 'object' && despesa.categoria.nome) {
-          const match = despesa.categoria.nome === filtros.categoria;
-          console.log('Comparando nomes:', despesa.categoria.nome, '===', filtros.categoria, '=', match);
+        if (typeof categoria === 'object' && 'nome' in categoria) {
+          const match = categoria.nome === filtros.categoria;
+          console.log('Comparando nomes:', categoria.nome, '===', filtros.categoria, '=', match);
           return match;
         }
         
         // Se a categoria é uma string, comparar diretamente
-        if (typeof despesa.categoria === 'string') {
-          const match = despesa.categoria === filtros.categoria;
-          console.log('Comparando strings:', despesa.categoria, '===', filtros.categoria, '=', match);
+        if (typeof categoria === 'string') {
+          const match = categoria === filtros.categoria;
+          console.log('Comparando strings:', categoria, '===', filtros.categoria, '=', match);
           return match;
         }
         
@@ -266,35 +267,42 @@ const HistoricoPagamentos = () => {
         <h2 className="text-2xl font-bold mb-4">Histórico de Pagamentos</h2>
         <div className="space-y-4">
           {despesasFiltradas.length > 0 ? (
-            despesasFiltradas.map((despesa) => (
-              <Card key={despesa.id} className="p-4">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold">{despesa.descricao || 'Sem descrição'}</h3>
-                    <p className="text-sm text-muted-foreground">{despesa.categoria?.nome || 'Sem categoria'}</p>
-                    {despesa.tipo === 'parcelada' && despesa.parcela_atual && despesa.numero_parcelas && (
-                      <p className="text-xs text-muted-foreground">
-                        Parcela {despesa.parcela_atual} de {despesa.numero_parcelas}
+            despesasFiltradas.map((despesa) => {
+              const categoria = despesa.categoria as any;
+              const categoriaNome = categoria && typeof categoria === 'object' && 'nome' in categoria 
+                ? categoria.nome 
+                : categoria || 'Sem categoria';
+              
+              return (
+                <Card key={despesa.id} className="p-4">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="font-semibold">{despesa.descricao || 'Sem descrição'}</h3>
+                      <p className="text-sm text-muted-foreground">{categoriaNome}</p>
+                      {despesa.tipo === 'parcelada' && despesa.parcela_atual && despesa.numero_parcelas && (
+                        <p className="text-xs text-muted-foreground">
+                          Parcela {despesa.parcela_atual} de {despesa.numero_parcelas}
+                        </p>
+                      )}
+                    </div>
+                    <Badge className={`${getTipoColor(despesa.tipo || 'variavel')} text-white`}>
+                      {getTipoLabel(despesa.tipo || 'variavel')}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <p className="text-lg font-bold text-primary">
+                      R$ {(despesa.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </p>
+                    {despesa.data_pagamento && (
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(despesa.data_pagamento).toLocaleDateString('pt-BR')}
                       </p>
                     )}
                   </div>
-                  <Badge className={`${getTipoColor(despesa.tipo || 'variavel')} text-white`}>
-                    {getTipoLabel(despesa.tipo || 'variavel')}
-                  </Badge>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <p className="text-lg font-bold text-primary">
-                    R$ {(despesa.valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                  </p>
-                  {despesa.data_pagamento && (
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(despesa.data_pagamento).toLocaleDateString('pt-BR')}
-                    </p>
-                  )}
-                </div>
-              </Card>
-            ))
+                </Card>
+              );
+            })
           ) : (
             <Card className="p-8 text-center">
               <p className="text-muted-foreground">
