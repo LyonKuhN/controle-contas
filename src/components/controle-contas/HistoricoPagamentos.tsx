@@ -61,7 +61,7 @@ const HistoricoPagamentos = () => {
       );
     }
 
-    if (filtros.tipo && filtros.tipo !== "") {
+    if (filtros.tipo && filtros.tipo !== "" && filtros.tipo !== "todos") {
       despesasFiltradas = despesasFiltradas.filter(despesa => 
         despesa.tipo === filtros.tipo
       );
@@ -127,7 +127,7 @@ const HistoricoPagamentos = () => {
     return total + (despesa?.valor || 0);
   }, 0);
 
-  const temFiltrosAtivos = filtros.categoria || filtros.tipo || filtros.valorMin || filtros.valorMax;
+  const temFiltrosAtivos = filtros.categoria || (filtros.tipo && filtros.tipo !== "todos") || filtros.valorMin || filtros.valorMax;
 
   return (
     <div className="space-y-6">
@@ -163,7 +163,7 @@ const HistoricoPagamentos = () => {
                   <SelectValue placeholder="Todos os tipos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos os tipos</SelectItem>
+                  <SelectItem value="todos">Todos os tipos</SelectItem>
                   <SelectItem value="fixa">Fixa</SelectItem>
                   <SelectItem value="variavel">Variável</SelectItem>
                   <SelectItem value="parcelada">Parcelada</SelectItem>
