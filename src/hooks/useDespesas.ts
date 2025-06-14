@@ -26,6 +26,7 @@ export const useDespesas = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Query para buscar apenas despesas normais (sem modelos)
   const { data: despesas = [], isLoading } = useQuery({
     queryKey: ['despesas'],
     queryFn: async () => {
@@ -44,6 +45,34 @@ export const useDespesas = () => {
         throw error;
       }
       console.log('Despesas carregadas:', data);
+      return data as Despesa[];
+    }
+  });
+
+  // Query separada para buscar todas as despesas (incluindo modelos) - usado no ControleContas
+  const { data: todasDespesas = [] } = useQuery({
+    queryKey: ['todas-despesas'],
+    queryFn: async () => {
+      console.log('Buscando todas as despesas (incluindo modelos)...');
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      const { data, error } = await supabase
+        .from('despesas')
+        .select(`
+          *,
+          categoria:categorias(nome, cor)
+        `)
+        .eq('user_id', user.id)
+        .order('data_vencimento', { ascending: true });
+
+      if (error) {
+        console.error('Erro ao buscar todas as despesas:', error);
+        throw error;
+      }
+      console.log('Todas as despesas carregadas (incluindo modelos):', data);
       return data as Despesa[];
     }
   });
@@ -78,6 +107,7 @@ export const useDespesas = () => {
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['despesas'] });
+      queryClient.invalidateQueries({ queryKey: ['todas-despesas'] });
       
       // Personalizar mensagem de sucesso baseada no tipo
       if (variables.tipo === 'fixa' && variables.is_modelo) {
@@ -233,6 +263,7 @@ export const useDespesas = () => {
     },
     onSuccess: (createdDespesas) => {
       queryClient.invalidateQueries({ queryKey: ['despesas'] });
+      queryClient.invalidateQueries({ queryKey: ['todas-despesas'] });
       toast({
         title: "Sucesso",
         description: `${createdDespesas.length} despesas fixas geradas para o mês selecionado!`
@@ -267,6 +298,7 @@ export const useDespesas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['despesas'] });
+      queryClient.invalidateQueries({ queryKey: ['todas-despesas'] });
     }
   });
 
@@ -286,6 +318,7 @@ export const useDespesas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['despesas'] });
+      queryClient.invalidateQueries({ queryKey: ['todas-despesas'] });
       toast({
         title: "Sucesso",
         description: "Despesa removida com sucesso!"
@@ -295,6 +328,7 @@ export const useDespesas = () => {
 
   return {
     despesas,
+    todasDespesas, // Novo retorno para usar no ControleContas
     isLoading,
     createDespesa,
     updateDespesa,

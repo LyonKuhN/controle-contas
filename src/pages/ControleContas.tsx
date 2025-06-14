@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,7 +12,7 @@ import { useReceitas } from "@/hooks/useReceitas";
 
 const ControleContas = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { despesas, generateDespesasFixas } = useDespesas();
+  const { despesas, todasDespesas, generateDespesasFixas } = useDespesas();
   const { receitas } = useReceitas();
 
   // Calcular saldo real baseado nas receitas recebidas e despesas pagas (excluindo modelos)
@@ -50,8 +49,8 @@ const ControleContas = () => {
   const valorContasTotal = despesasDoMes.reduce((total, despesa) => total + despesa.valor, 0);
   const valorContasPendentes = contasAPagar.reduce((total, despesa) => total + despesa.valor, 0);
 
-  // Verificar se existem despesas fixas modelo
-  const temDespesasFixasModelo = despesas.some(despesa => despesa.tipo === 'fixa' && despesa.is_modelo);
+  // Verificar se existem despesas fixas modelo usando todasDespesas
+  const temDespesasFixasModelo = todasDespesas.some(despesa => despesa.tipo === 'fixa' && despesa.is_modelo);
 
   const navigateMonth = (direction: 'prev' | 'next') => {
     setCurrentDate(prev => {
