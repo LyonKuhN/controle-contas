@@ -13,12 +13,14 @@ const CTASection = () => {
         <p className="text-xl mb-8 text-primary-foreground/80">
           Experimente por 3 dias grátis e veja como é fácil ter controle total do seu dinheiro.
         </p>
-        <Link to="/auth?mode=signup">
-          <Button size="lg" variant="secondary" className="text-base px-8 py-4 bg-background text-foreground hover:bg-background/90 max-w-xs mx-auto">
-            Começar Agora - É Grátis
-            <ArrowRight className="ml-2 w-4 h-4" />
-          </Button>
-        </Link>
+        <div className="flex justify-center">
+          <Link to="/auth?mode=signup">
+            <Button size="lg" variant="secondary" className="text-base px-8 py-4 bg-background text-foreground hover:bg-background/90">
+              Começar Agora - É Grátis
+              <ArrowRight className="ml-2 w-4 h-4" />
+            </Button>
+          </Link>
+        </div>
         <p className="text-sm text-primary-foreground/70 mt-4">
           ✓ Sem cartão de crédito • ✓ Cancele quando quiser
         </p>
