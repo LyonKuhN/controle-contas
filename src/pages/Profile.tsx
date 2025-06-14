@@ -1,6 +1,6 @@
-
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useStripePrice } from '@/hooks/useStripePrice';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,8 @@ import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 
 const Profile = () => {
-  const { user, signOut, subscriptionData, checkSubscription, session } = useAuth();
+  const { user, signOut, subscriptionData, checkSubscription, session, userName } = useAuth();
+  const { priceData } = useStripePrice();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -197,6 +198,8 @@ const Profile = () => {
     }
   };
 
+  const displayPrice = priceData?.formatted || 'R$ 29,90';
+
   return (
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8">
@@ -209,10 +212,10 @@ const Profile = () => {
         </div>
 
         <div className="max-w-2xl mx-auto space-y-8">
-          {/* Profile Header */}
+          {/* Profile Header with Welcome Message */}
           <div className="text-center">
             <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-2">
-              Meu Perfil
+              Seja bem-vindo, {userName || 'Usuário'}!
             </h1>
             <p className="text-muted-foreground">
               Gerencie suas informações pessoais e configurações de conta
@@ -291,7 +294,7 @@ const Profile = () => {
                   className="w-full bg-gradient-to-r from-primary to-accent text-black font-semibold py-6"
                 >
                   <Crown className="w-4 h-4 mr-2" />
-                  {loading ? 'Processando...' : 'Assinar Agora - R$ 29,90/mês'}
+                  {loading ? 'Processando...' : `Assinar Agora - ${displayPrice}/mês`}
                 </Button>
               </div>
             ) : (
@@ -307,7 +310,7 @@ const Profile = () => {
                   className="w-full bg-gradient-to-r from-primary to-accent text-black font-semibold py-6"
                 >
                   <CreditCard className="w-4 h-4 mr-2" />
-                  {loading ? 'Processando...' : 'Assinar Premium - R$ 29,90/mês'}
+                  {loading ? 'Processando...' : `Assinar Premium - ${displayPrice}/mês`}
                 </Button>
               </div>
             )}
@@ -322,6 +325,16 @@ const Profile = () => {
             
             <div className="space-y-4">
               <div>
+                <Label htmlFor="name">Nome</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  value={userName || ''}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+              <div>
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
@@ -331,7 +344,7 @@ const Profile = () => {
                   className="bg-muted"
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  O email não pode ser alterado
+                  O email e nome não podem ser alterados
                 </p>
               </div>
             </div>

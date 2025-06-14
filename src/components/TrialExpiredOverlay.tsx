@@ -1,5 +1,6 @@
 
 import { useAuth } from '@/hooks/useAuth';
+import { useStripePrice } from '@/hooks/useStripePrice';
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const TrialExpiredOverlay = () => {
   const { user, subscriptionData, session } = useAuth();
+  const { priceData } = useStripePrice();
   const { toast } = useToast();
   const location = useLocation();
   const [isTrialExpired, setIsTrialExpired] = useState(false);
@@ -80,6 +82,8 @@ const TrialExpiredOverlay = () => {
   // Don't show overlay if user has active subscription, trial hasn't expired, or not on restricted page
   if (!isTrialExpired || subscriptionData?.subscribed || !shouldShowOnCurrentPage) return null;
 
+  const displayPrice = priceData?.formatted || 'R$ 29,90';
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <Card className="max-w-md w-full p-8 text-center space-y-6">
@@ -95,7 +99,7 @@ const TrialExpiredOverlay = () => {
         </div>
 
         <div className="bg-primary/20 text-primary p-4 rounded-lg">
-          <div className="text-lg font-bold">R$ 29,90/mês</div>
+          <div className="text-lg font-bold">{displayPrice}/mês</div>
           <div className="text-sm">Acesso completo a todas as funcionalidades</div>
         </div>
 

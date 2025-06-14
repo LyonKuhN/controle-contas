@@ -6,54 +6,71 @@ import { ArrowRight, Star } from 'lucide-react';
 const HeroSection = () => {
   return (
     <div className="container mx-auto px-4 py-16">
-      <div className="text-center max-w-5xl mx-auto mb-20">
-        {/* Badge de Oferta */}
-        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/20 to-accent/20 text-primary border border-primary/30 px-6 py-2 rounded-full mb-8">
-          <Star className="w-4 h-4" />
-          <span className="text-sm font-semibold">🎉 3 DIAS GRÁTIS - Sem cartão de crédito</span>
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
+        {/* Left Column - Text Content */}
+        <div className="text-center lg:text-left">
+          {/* Badge de Oferta */}
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/30 to-accent/30 text-white border-2 border-primary/50 px-6 py-3 rounded-full mb-8 backdrop-blur-sm">
+            <Star className="w-4 h-4" />
+            <span className="text-sm font-bold">🎉 3 DIAS GRÁTIS - Sem cartão de crédito</span>
+          </div>
 
-        <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-6 leading-tight">
-          Controle Total das Suas Finanças
-        </h1>
-        <p className="text-xl md:text-2xl text-muted-foreground mb-12 leading-relaxed max-w-4xl mx-auto">
-          A ferramenta mais completa para gerenciar seus gastos, receitas e investimentos. 
-          <span className="text-primary font-semibold"> Experimente grátis por 3 dias</span> e descubra como é fácil ter controle total do seu dinheiro.
-        </p>
-        
-        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
-          <Link to="/auth?mode=signup">
-            <Button size="lg" className="text-lg px-12 py-6 min-w-[250px] bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-black font-bold shadow-xl">
-              Começar 3 Dias Grátis
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-          </Link>
+          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-6 leading-tight">
+            Controle Total das Suas Finanças
+          </h1>
+          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+            A ferramenta mais completa para gerenciar seus gastos, receitas e investimentos. 
+            <span className="text-primary font-bold"> Experimente grátis por 3 dias</span> e descubra como é fácil ter controle total do seu dinheiro.
+          </p>
           
-          <p className="text-sm text-muted-foreground">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start items-center mb-8">
+            <Link to="/auth?mode=signup">
+              <Button size="lg" className="text-lg px-12 py-6 min-w-[250px] bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-black font-bold shadow-2xl transition-all duration-300 transform hover:scale-105">
+                Começar 3 Dias Grátis
+                <ArrowRight className="ml-2 w-5 h-5" />
+              </Button>
+            </Link>
+          </div>
+          
+          <p className="text-sm text-gray-300 font-medium">
             ✓ Sem compromisso • ✓ Cancele a qualquer momento
           </p>
         </div>
 
-        {/* Preview do Sistema */}
+        {/* Right Column - Image */}
         <div className="relative">
-          <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl p-8 border border-primary/20">
-            <h3 className="text-2xl font-bold mb-6 text-white">Veja como é simples:</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-card/50 backdrop-blur rounded-lg p-6 border border-primary/10">
-                <div className="text-3xl mb-3">📊</div>
-                <h4 className="font-semibold mb-2">Dashboard Inteligente</h4>
-                <p className="text-sm text-muted-foreground">Gráficos em tempo real dos seus gastos</p>
-              </div>
-              <div className="bg-card/50 backdrop-blur rounded-lg p-6 border border-primary/10">
-                <div className="text-3xl mb-3">💸</div>
-                <h4 className="font-semibold mb-2">Controle de Despesas</h4>
-                <p className="text-sm text-muted-foreground">Categorização automática e inteligente</p>
-              </div>
-              <div className="bg-card/50 backdrop-blur rounded-lg p-6 border border-primary/10">
-                <div className="text-3xl mb-3">📋</div>
-                <h4 className="font-semibold mb-2">Relatórios Detalhados</h4>
-                <p className="text-sm text-muted-foreground">Análises completas do seu dinheiro</p>
-              </div>
+          <div className="relative bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl p-8 border border-primary/30 backdrop-blur-sm">
+            <img 
+              src="/placeholder.svg?height=400&width=600" 
+              alt="Dashboard Preview"
+              className="w-full h-auto rounded-2xl shadow-2xl"
+            />
+            <div className="absolute -top-4 -right-4 bg-gradient-to-r from-primary to-accent text-black px-4 py-2 rounded-full font-bold text-sm shadow-lg">
+              💰 Controle Total
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Preview do Sistema */}
+      <div className="relative">
+        <div className="bg-gradient-to-r from-primary/20 to-accent/20 rounded-2xl p-8 border-2 border-primary/30 backdrop-blur-sm">
+          <h3 className="text-2xl md:text-3xl font-bold mb-6 text-white text-center">Veja como é simples:</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-black/30 backdrop-blur rounded-lg p-6 border border-primary/20 hover:border-primary/40 transition-all duration-300">
+              <div className="text-4xl mb-4 text-center">📊</div>
+              <h4 className="font-bold mb-3 text-white text-lg text-center">Dashboard Inteligente</h4>
+              <p className="text-sm text-gray-300 text-center">Gráficos em tempo real dos seus gastos com análises detalhadas</p>
+            </div>
+            <div className="bg-black/30 backdrop-blur rounded-lg p-6 border border-primary/20 hover:border-primary/40 transition-all duration-300">
+              <div className="text-4xl mb-4 text-center">💸</div>
+              <h4 className="font-bold mb-3 text-white text-lg text-center">Controle de Despesas</h4>
+              <p className="text-sm text-gray-300 text-center">Categorização automática e inteligente de todos os gastos</p>
+            </div>
+            <div className="bg-black/30 backdrop-blur rounded-lg p-6 border border-primary/20 hover:border-primary/40 transition-all duration-300">
+              <div className="text-4xl mb-4 text-center">📋</div>
+              <h4 className="font-bold mb-3 text-white text-lg text-center">Relatórios Detalhados</h4>
+              <p className="text-sm text-gray-300 text-center">Análises completas e exportáveis do seu dinheiro</p>
             </div>
           </div>
         </div>

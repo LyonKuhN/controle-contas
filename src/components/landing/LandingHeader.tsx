@@ -21,7 +21,10 @@ const LandingHeader = () => {
         <div className="flex gap-4 items-center">
           <ThemeToggle />
           <Link to="/auth?mode=login">
-            <Button variant="outline" className="border-primary/20 text-white hover:bg-primary/10">
+            <Button 
+              variant="outline" 
+              className="border-2 border-white/80 text-white bg-black/20 backdrop-blur-sm hover:bg-white hover:text-black transition-all duration-300 font-semibold"
+            >
               Login
             </Button>
           </Link>

@@ -4,15 +4,17 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "@/hooks/useAuth";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import SubscriptionGuard from "@/components/SubscriptionGuard";
+import TrialExpiredOverlay from "@/components/TrialExpiredOverlay";
 import Index from "./pages/Index";
+import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
 import Despesas from "./pages/Despesas";
 import Receitas from "./pages/Receitas";
 import ControleContas from "./pages/ControleContas";
-import Auth from "./pages/Auth";
-import Profile from "./pages/Profile";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 
@@ -20,23 +22,20 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="dark"
-      enableSystem
-      disableTransitionOnChange
-    >
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
             <Routes>
               <Route path="/landing" element={<Landing />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/" element={
                 <ProtectedRoute>
-                  <Index />
+                  <SubscriptionGuard>
+                    <Index />
+                  </SubscriptionGuard>
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={
@@ -46,24 +45,31 @@ const App = () => (
               } />
               <Route path="/despesas" element={
                 <ProtectedRoute>
-                  <Despesas />
+                  <SubscriptionGuard>
+                    <Despesas />
+                  </SubscriptionGuard>
                 </ProtectedRoute>
               } />
               <Route path="/receitas" element={
                 <ProtectedRoute>
-                  <Receitas />
+                  <SubscriptionGuard>
+                    <Receitas />
+                  </SubscriptionGuard>
                 </ProtectedRoute>
               } />
               <Route path="/controle-contas" element={
                 <ProtectedRoute>
-                  <ControleContas />
+                  <SubscriptionGuard>
+                    <ControleContas />
+                  </SubscriptionGuard>
                 </ProtectedRoute>
               } />
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
+            <TrialExpiredOverlay />
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

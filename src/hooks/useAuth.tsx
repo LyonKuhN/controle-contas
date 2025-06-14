@@ -13,11 +13,12 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   subscriptionData: SubscriptionData | null;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   checkSubscription: () => Promise<void>;
   loading: boolean;
+  userName: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,6 +28,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [userName, setUserName] = useState<string | null>(null);
 
   const checkSubscription = async () => {
     if (!session) return;
@@ -56,6 +58,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         setLoading(false);
         
+        // Extract user name from metadata
+        if (session?.user?.user_metadata?.full_name) {
+          setUserName(session.user.user_metadata.full_name);
+        } else if (session?.user?.email) {
+          // Fallback to first part of email
+          const emailName = session.user.email.split('@')[0];
+          setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
+        }
+        
         // Check subscription when user signs in
         if (session?.user && event === 'SIGNED_IN') {
           setTimeout(() => {
@@ -66,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Clear subscription data when user signs out
         if (event === 'SIGNED_OUT') {
           setSubscriptionData(null);
+          setUserName(null);
         }
       }
     );
@@ -74,6 +86,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Extract user name from metadata
+      if (session?.user?.user_metadata?.full_name) {
+        setUserName(session.user.user_metadata.full_name);
+      } else if (session?.user?.email) {
+        // Fallback to first part of email
+        const emailName = session.user.email.split('@')[0];
+        setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
+      }
       
       // Check subscription for existing session
       if (session?.user) {
@@ -86,14 +107,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string) => {
+  const signUp = async (email: string, password: string, fullName?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: redirectUrl
+        emailRedirectTo: redirectUrl,
+        data: {
+          full_name: fullName
+        }
       }
     });
     return { error };
@@ -120,7 +144,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       signIn,
       signOut,
       checkSubscription,
-      loading
+      loading,
+      userName
     }}>
       {children}
     </AuthContext.Provider>

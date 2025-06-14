@@ -1,5 +1,6 @@
 
 import { useAuth } from '@/hooks/useAuth';
+import { useStripePrice } from '@/hooks/useStripePrice';
 import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 const TrialNotification = () => {
   const { user, subscriptionData, session } = useAuth();
+  const { priceData } = useStripePrice();
   const { toast } = useToast();
   const [showNotification, setShowNotification] = useState(false);
   const [daysLeft, setDaysLeft] = useState(0);
@@ -81,6 +83,8 @@ const TrialNotification = () => {
 
   if (!showNotification || subscriptionData?.subscribed) return null;
 
+  const displayPrice = priceData?.formatted || 'R$ 29,90';
+
   return (
     <Card className="trial-notification p-4 mb-6 text-black">
       <div className="flex items-center justify-between">
@@ -104,7 +108,7 @@ const TrialNotification = () => {
           size="sm"
         >
           <Crown className="w-4 h-4 mr-2" />
-          {loading ? 'Processando...' : 'Assinar Premium'}
+          {loading ? 'Processando...' : `Assinar ${displayPrice}/mês`}
         </Button>
       </div>
     </Card>
