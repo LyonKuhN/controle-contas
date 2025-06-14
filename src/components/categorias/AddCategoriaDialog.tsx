@@ -28,16 +28,29 @@ const AddCategoriaDialog = ({ open, onClose, tipo }: AddCategoriaDialogProps) =>
 
   const createCategoria = useMutation({
     mutationFn: async (data: { nome: string; tipo: string; cor: string }) => {
+      // Verifica se o usuário está autenticado
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('Usuário não autenticado');
+      }
+
+      console.log('Criando categoria para usuário:', user.id, data);
+
       const { data: categoria, error } = await supabase
         .from('categorias')
         .insert([{
           ...data,
-          user_id: (await supabase.auth.getUser()).data.user?.id
+          user_id: user.id
         }])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro ao criar categoria:', error);
+        throw error;
+      }
+      
+      console.log('Categoria criada com sucesso:', categoria);
       return categoria;
     },
     onSuccess: () => {

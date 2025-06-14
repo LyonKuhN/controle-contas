@@ -31,6 +31,9 @@ const SubscriptionDialog = ({ isOpen, onClose }: SubscriptionDialogProps) => {
     // Keep dialog open to show updated status
   };
 
+  // Check if subscription is canceled but still active
+  const isSubscriptionCanceled = subscriptionData?.subscribed && subscriptionData?.subscription_end;
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
@@ -51,9 +54,15 @@ const SubscriptionDialog = ({ isOpen, onClose }: SubscriptionDialogProps) => {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">Status</span>
-                  <Badge className="bg-green-500 text-white">
-                    Ativa
-                  </Badge>
+                  {isSubscriptionCanceled ? (
+                    <Badge className="bg-orange-500 text-white">
+                      Cancelada
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-green-500 text-white">
+                      Ativa
+                    </Badge>
+                  )}
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -67,7 +76,7 @@ const SubscriptionDialog = ({ isOpen, onClose }: SubscriptionDialogProps) => {
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      Próxima cobrança
+                      {isSubscriptionCanceled ? 'Ativa até' : 'Próxima cobrança'}
                     </span>
                     <span className="text-sm">
                       {formatDate(subscriptionData.subscription_end)}
@@ -76,30 +85,49 @@ const SubscriptionDialog = ({ isOpen, onClose }: SubscriptionDialogProps) => {
                 )}
               </div>
 
-              {/* Aviso sobre cancelamento */}
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5" />
-                  <div className="text-sm text-orange-700">
-                    <p className="font-medium">Cancelar assinatura</p>
-                    <p className="text-xs mt-1">
-                      Ao cancelar, você manterá acesso até o final do período pago atual.
-                    </p>
+              {/* Status message for canceled subscription */}
+              {isSubscriptionCanceled && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5" />
+                    <div className="text-sm text-orange-700">
+                      <p className="font-medium">Assinatura cancelada</p>
+                      <p className="text-xs mt-1">
+                        Sua assinatura foi cancelada mas permanece ativa até {formatDate(subscriptionData.subscription_end)}.
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
+              )}
+
+              {/* Aviso sobre cancelamento - só mostra se não estiver cancelada */}
+              {!isSubscriptionCanceled && (
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 text-orange-500 mt-0.5" />
+                    <div className="text-sm text-orange-700">
+                      <p className="font-medium">Cancelar assinatura</p>
+                      <p className="text-xs mt-1">
+                        Ao cancelar, você manterá acesso até o final do período pago atual.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Botões de ação */}
               <div className="flex flex-col gap-2">
-                <Button
-                  onClick={handleCancel}
-                  disabled={loading}
-                  variant="destructive"
-                  className="w-full"
-                >
-                  <X className="w-4 h-4 mr-2" />
-                  {loading ? 'Cancelando...' : 'Cancelar Assinatura'}
-                </Button>
+                {!isSubscriptionCanceled && (
+                  <Button
+                    onClick={handleCancel}
+                    disabled={loading}
+                    variant="destructive"
+                    className="w-full"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    {loading ? 'Cancelando...' : 'Cancelar Assinatura'}
+                  </Button>
+                )}
               </div>
             </>
           ) : (

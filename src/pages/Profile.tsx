@@ -60,6 +60,20 @@ const Profile = () => {
     return () => clearInterval(interval);
   }, [user.created_at, subscriptionData]);
 
+  // Check if subscription is canceled but still active
+  const isSubscriptionCanceled = subscriptionData?.subscribed && subscriptionData?.subscription_end;
+
+  const getSubscriptionStatusDisplay = () => {
+    if (!subscriptionData?.subscribed) return null;
+    
+    if (isSubscriptionCanceled) {
+      const endDate = new Date(subscriptionData.subscription_end).toLocaleDateString('pt-BR');
+      return `Cancelado, ativo até ${endDate}`;
+    }
+    
+    return 'Assinatura Ativa';
+  };
+
   const handleLogout = async () => {
     try {
       await signOut();
@@ -183,14 +197,16 @@ const Profile = () => {
             
             {subscriptionData?.subscribed ? (
               <div className="space-y-4">
-                <div className="bg-green-500/20 text-green-700 p-4 rounded-lg text-center">
-                  <p className="font-semibold text-lg">✅ Assinatura Ativa</p>
+                <div className={`${isSubscriptionCanceled ? 'bg-orange-500/20 text-orange-700' : 'bg-green-500/20 text-green-700'} p-4 rounded-lg text-center`}>
+                  <p className="font-semibold text-lg">
+                    {isSubscriptionCanceled ? '⚠️' : '✅'} {getSubscriptionStatusDisplay()}
+                  </p>
                   <p className="text-sm">
                     Plano: {subscriptionData.subscription_tier || 'Premium'}
                   </p>
                   {subscriptionData.subscription_end && (
                     <p className="text-sm">
-                      Renova em: {new Date(subscriptionData.subscription_end).toLocaleDateString('pt-BR')}
+                      {isSubscriptionCanceled ? 'Ativa até' : 'Renova em'}: {new Date(subscriptionData.subscription_end).toLocaleDateString('pt-BR')}
                     </p>
                   )}
                 </div>
