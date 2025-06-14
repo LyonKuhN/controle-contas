@@ -27,7 +27,7 @@ export const useCategorias = (tipo?: 'despesa' | 'receita') => {
       let query = supabase
         .from('categorias')
         .select('*')
-        .eq('user_id', user.id); // Filtra apenas categorias do usuário atual
+        .or(`user_id.eq.${user.id},user_id.is.null`); // Busca categorias do usuário OU categorias padrão (user_id = NULL)
       
       if (tipo) {
         query = query.eq('tipo', tipo);
@@ -47,6 +47,17 @@ export const useCategorias = (tipo?: 'despesa' | 'receita') => {
 
   const deleteCategoria = useMutation({
     mutationFn: async (id: string) => {
+      // Verificar se é uma categoria padrão do sistema (user_id = NULL)
+      const { data: categoria } = await supabase
+        .from('categorias')
+        .select('user_id')
+        .eq('id', id)
+        .single();
+
+      if (categoria && categoria.user_id === null) {
+        throw new Error('Não é possível excluir categorias padrão do sistema');
+      }
+
       const { error } = await supabase
         .from('categorias')
         .delete()
@@ -65,7 +76,7 @@ export const useCategorias = (tipo?: 'despesa' | 'receita') => {
       console.error('Erro ao deletar categoria:', error);
       toast({
         title: "Erro",
-        description: "Erro ao remover categoria",
+        description: error.message || "Erro ao remover categoria",
         variant: "destructive"
       });
     }
