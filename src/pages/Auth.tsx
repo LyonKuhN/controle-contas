@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
@@ -16,6 +17,7 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [confirmationMethod, setConfirmationMethod] = useState<ConfirmationMethod>('email');
   const [loading, setLoading] = useState(false);
@@ -50,6 +52,27 @@ const Auth = () => {
           });
         }
       } else {
+        // Validar confirmação de senha
+        if (password !== confirmPassword) {
+          toast({
+            title: "Erro",
+            description: "As senhas não coincidem",
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+
+        if (password.length < 6) {
+          toast({
+            title: "Erro",
+            description: "A senha deve ter pelo menos 6 caracteres",
+            variant: "destructive"
+          });
+          setLoading(false);
+          return;
+        }
+
         // Cadastro
         const { error } = await signUp(email, password);
         if (error) {
@@ -70,6 +93,7 @@ const Auth = () => {
               setShowSuccessMessage(false);
               setEmail('');
               setPassword('');
+              setConfirmPassword('');
               setPhone('');
             }, 3000);
           }
@@ -91,6 +115,7 @@ const Auth = () => {
     setIsLogin(true);
     setEmail('');
     setPassword('');
+    setConfirmPassword('');
     setPhone('');
     toast({
       title: "Conta confirmada!",
@@ -171,8 +196,23 @@ const Auth = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                minLength={6}
               />
             </div>
+
+            {!isLogin && (
+              <div>
+                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  minLength={6}
+                />
+              </div>
+            )}
 
             {!isLogin && (
               <>
@@ -218,7 +258,11 @@ const Auth = () => {
           <div className="mt-4 text-center">
             <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setPassword('');
+                setConfirmPassword('');
+              }}
               className="text-primary hover:underline"
             >
               {isLogin ? 'Não tem conta? Criar uma' : 'Já tem conta? Entrar'}

@@ -6,50 +6,33 @@ import { ArrowRight, Star } from 'lucide-react';
 const HeroSection = () => {
   return (
     <div className="container mx-auto px-4 py-16">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-20">
-        {/* Left Column - Text Content */}
-        <div className="text-center lg:text-left">
-          {/* Badge de Oferta */}
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/30 to-accent/30 text-white border-2 border-primary/50 px-6 py-3 rounded-full mb-8 backdrop-blur-sm">
-            <Star className="w-4 h-4" />
-            <span className="text-sm font-bold">🎉 3 DIAS GRÁTIS - Sem cartão de crédito</span>
-          </div>
-
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-6 leading-tight">
-            Controle Total das Suas Finanças
-          </h1>
-          <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
-            A ferramenta mais completa para gerenciar seus gastos, receitas e investimentos. 
-            <span className="text-primary font-bold"> Experimente grátis por 3 dias</span> e descubra como é fácil ter controle total do seu dinheiro.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-6 justify-center lg:justify-start items-center mb-8">
-            <Link to="/auth?mode=signup">
-              <Button size="lg" className="text-lg px-12 py-6 min-w-[250px] bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-black font-bold shadow-2xl transition-all duration-300 transform hover:scale-105">
-                Começar 3 Dias Grátis
-                <ArrowRight className="ml-2 w-5 h-5" />
-              </Button>
-            </Link>
-          </div>
-          
-          <p className="text-sm text-gray-300 font-medium">
-            ✓ Sem compromisso • ✓ Cancele a qualquer momento
-          </p>
+      <div className="text-center mb-20">
+        {/* Badge de Oferta */}
+        <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/30 to-accent/30 text-white border-2 border-primary/50 px-6 py-3 rounded-full mb-8 backdrop-blur-sm">
+          <Star className="w-4 h-4" />
+          <span className="text-sm font-bold">🎉 3 DIAS GRÁTIS - Sem cartão de crédito</span>
         </div>
 
-        {/* Right Column - Image */}
-        <div className="relative">
-          <div className="relative bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl p-8 border border-primary/30 backdrop-blur-sm">
-            <img 
-              src="/placeholder.svg?height=400&width=600" 
-              alt="Dashboard Preview"
-              className="w-full h-auto rounded-2xl shadow-2xl"
-            />
-            <div className="absolute -top-4 -right-4 bg-gradient-to-r from-primary to-accent text-black px-4 py-2 rounded-full font-bold text-sm shadow-lg">
-              💰 Controle Total
-            </div>
-          </div>
+        <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-6 leading-tight">
+          Controle Total das Suas Finanças
+        </h1>
+        <p className="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed max-w-4xl mx-auto">
+          A ferramenta mais completa para gerenciar seus gastos, receitas e investimentos. 
+          <span className="text-primary font-bold"> Experimente grátis por 3 dias</span> e descubra como é fácil ter controle total do seu dinheiro.
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-8">
+          <Link to="/auth?mode=signup">
+            <Button size="lg" className="text-lg px-12 py-6 min-w-[250px] bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 text-black font-bold shadow-2xl transition-all duration-300 transform hover:scale-105">
+              Começar 3 Dias Grátis
+              <ArrowRight className="ml-2 w-5 h-5" />
+            </Button>
+          </Link>
         </div>
+        
+        <p className="text-sm text-gray-300 font-medium">
+          ✓ Sem compromisso • ✓ Cancele a qualquer momento
+        </p>
       </div>
 
       {/* Preview do Sistema */}
