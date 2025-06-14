@@ -1,4 +1,3 @@
-
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -124,6 +123,11 @@ const ContasPagar = ({ currentDate }: ContasPagarProps) => {
                         Parcela {despesa.parcela_atual} de {despesa.numero_parcelas}
                       </p>
                     )}
+                    {despesa.observacoes && (
+                      <p className="text-xs text-muted-foreground mt-1 italic">
+                        💬 {despesa.observacoes}
+                      </p>
+                    )}
                   </div>
                   <Badge className={`${getTipoColor(despesa.tipo || 'variavel')} text-white`}>
                     {getTipoLabel(despesa.tipo || 'variavel')}
@@ -183,6 +187,11 @@ const ContasPagar = ({ currentDate }: ContasPagarProps) => {
                     {despesa.tipo === 'parcelada' && (
                       <p className="text-xs text-green-600">
                         Parcela {despesa.parcela_atual} de {despesa.numero_parcelas}
+                      </p>
+                    )}
+                    {despesa.observacoes && (
+                      <p className="text-xs text-green-600 mt-1 italic">
+                        💬 {despesa.observacoes}
                       </p>
                     )}
                   </div>
