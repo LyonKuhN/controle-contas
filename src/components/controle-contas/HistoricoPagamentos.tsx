@@ -57,9 +57,15 @@ const HistoricoPagamentos = () => {
   // Aplicar filtros apenas se existem despesas
   if (despesasFiltradas.length > 0) {
     if (filtros.categoria && filtros.categoria.trim() !== "" && filtros.categoria !== "todas") {
-      despesasFiltradas = despesasFiltradas.filter(despesa => 
-        despesa.categoria?.id === filtros.categoria
-      );
+      despesasFiltradas = despesasFiltradas.filter(despesa => {
+        // Fix: Check if categoria exists and has id property, otherwise use nome for comparison
+        if (despesa.categoria && 'id' in despesa.categoria) {
+          return despesa.categoria.id === filtros.categoria;
+        } else if (despesa.categoria && 'nome' in despesa.categoria) {
+          return despesa.categoria.nome === filtros.categoria;
+        }
+        return false;
+      });
     }
 
     if (filtros.tipo && filtros.tipo !== "" && filtros.tipo !== "todos") {
@@ -157,7 +163,10 @@ const HistoricoPagamentos = () => {
                 <SelectContent>
                   <SelectItem value="todas">Todas as categorias</SelectItem>
                   {categorias.map((categoria) => (
-                    <SelectItem key={categoria.id} value={categoria.id}>
+                    <SelectItem 
+                      key={categoria.id || categoria.nome} 
+                      value={categoria.id || categoria.nome}
+                    >
                       {categoria.nome}
                     </SelectItem>
                   ))}
@@ -165,6 +174,7 @@ const HistoricoPagamentos = () => {
               </Select>
             </div>
 
+            
             <div>
               <label className="text-sm font-medium mb-1 block">Tipo</label>
               <Select value={filtros.tipo} onValueChange={(value) => setFiltros({...filtros, tipo: value})}>
@@ -213,7 +223,7 @@ const HistoricoPagamentos = () => {
         )}
       </Card>
 
-      {/* Resumo */}
+      
       <Card className="p-6">
         <div className="text-center">
           <h3 className="text-lg font-medium mb-2">Total Filtrado</h3>
@@ -226,7 +236,6 @@ const HistoricoPagamentos = () => {
         </div>
       </Card>
 
-      {/* Lista do Histórico */}
       <div>
         <h2 className="text-2xl font-bold mb-4">Histórico de Pagamentos</h2>
         <div className="space-y-4">
