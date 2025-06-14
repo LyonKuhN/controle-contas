@@ -1,8 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { Resend } from "npm:resend@2.0.0";
-
-const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -30,29 +27,40 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("User email:", userEmail);
     console.log("User name:", userName);
 
-    // Send email using Resend
-    const emailResponse = await resend.emails.send({
-      from: "LYONPAY Support <onboarding@resend.dev>",
-      to: ["adm@lyonpay.com"],
-      reply_to: userEmail,
+    // Prepare EmailJS template parameters
+    const templateParams = {
+      from_name: userName || 'Usuário',
+      from_email: userEmail,
       subject: `[SUPORTE] ${subject}`,
-      html: `
-        <h2>Nova solicitação de suporte - LYONPAY</h2>
-        <p><strong>De:</strong> ${userName || 'Usuário'} (${userEmail})</p>
-        <p><strong>Assunto:</strong> ${subject}</p>
-        <p><strong>Descrição:</strong></p>
-        <div style="background-color: #f5f5f5; padding: 15px; border-left: 4px solid #007bff; margin: 10px 0;">
-          ${description.replace(/\n/g, '<br>')}
-        </div>
-        <hr>
-        <p style="color: #666; font-size: 12px;">
-          Esta mensagem foi enviada através do sistema de suporte do LYONPAY.<br>
-          Para responder, utilize o email: ${userEmail}
-        </p>
-      `,
+      message: description,
+      to_email: 'adm@lyonpay.com'
+    };
+
+    // Send email using EmailJS API
+    const emailJSResponse = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        service_id: 'service_99hwcjp',
+        template_id: 'template_nhw6xf2',
+        user_id: 'a9S7JoGNsZByr0Pej',
+        accessToken: 'gZ0SYUlZhi7kPr5JPvjJc',
+        template_params: templateParams
+      })
     });
 
-    console.log("Email sent successfully:", emailResponse);
+    console.log("EmailJS Response Status:", emailJSResponse.status);
+
+    if (!emailJSResponse.ok) {
+      const errorText = await emailJSResponse.text();
+      console.error("EmailJS Error:", errorText);
+      throw new Error(`EmailJS error: ${emailJSResponse.status} - ${errorText}`);
+    }
+
+    const emailJSResult = await emailJSResponse.text();
+    console.log("EmailJS Success:", emailJSResult);
 
     return new Response(
       JSON.stringify({ 
