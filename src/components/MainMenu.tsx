@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
 import NavigationIsland from "./NavigationIsland";
 import ThemeToggle from "./ThemeToggle";
+import SupportDialog from "./SupportDialog";
 import { useAuth } from "@/hooks/useAuth";
 
 const menuItems = [
@@ -39,28 +40,34 @@ const MainMenu = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Navigation Island, Theme Toggle and Profile Button */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="relative">
-          <NavigationIsland />
+      {/* Top Actions Bar - Mobile Friendly */}
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex justify-between items-start mb-4">
+          {/* Left side - Support Button */}
+          <div className="flex items-center">
+            <SupportDialog variant="outline" size="sm" />
+          </div>
           
-          {/* Theme Toggle and Profile Button - positioned at the same height as navigation island */}
-          <div className="absolute top-0 right-0 flex items-center gap-3">
+          {/* Right side - Theme Toggle and Profile */}
+          <div className="flex items-center gap-2">
             <ThemeToggle />
             {user && (
               <Link to="/profile">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-white/80 hover:text-white hover:bg-white/20"
+                  className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-foreground hover:bg-primary/10"
                 >
                   <User className="w-4 h-4" />
-                  Perfil
+                  <span className="hidden sm:inline">Perfil</span>
                 </Button>
               </Link>
             )}
           </div>
         </div>
+        
+        {/* Navigation Island - Centered */}
+        <NavigationIsland />
       </div>
 
       <div className="container mx-auto px-4">

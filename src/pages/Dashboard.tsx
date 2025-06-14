@@ -1,13 +1,19 @@
 
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { User } from "lucide-react";
+import { Link } from "react-router-dom";
 import NavigationIsland from "@/components/NavigationIsland";
 import ThemeToggle from "@/components/ThemeToggle";
+import SupportDialog from "@/components/SupportDialog";
+import { useAuth } from "@/hooks/useAuth";
 import { useDespesas } from "@/hooks/useDespesas";
 import { useReceitas } from "@/hooks/useReceitas";
 import { useCategorias } from "@/hooks/useCategorias";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const { despesas } = useDespesas();
   const { receitas } = useReceitas();
   const { categorias } = useCategorias();
@@ -17,7 +23,6 @@ const Dashboard = () => {
   const totalReceitas = receitas.reduce((acc, receita) => acc + Number(receita.valor), 0);
   const saldoLiquido = totalReceitas - totalDespesas;
 
-  // Despesas por categoria
   const despesasPorCategoria = despesas.reduce((acc, despesa) => {
     const categoria = categorias.find(cat => cat.id === despesa.categoria_id);
     const nomeCategoria = categoria?.nome || 'Sem categoria';
@@ -31,7 +36,6 @@ const Dashboard = () => {
     fill: `hsl(${index * 45}, 70%, 60%)`
   }));
 
-  // Despesas por tipo
   const despesasPorTipo = despesas.reduce((acc, despesa) => {
     const tipo = despesa.tipo || 'variavel';
     acc[tipo] = (acc[tipo] || 0) + Number(despesa.valor);
@@ -51,14 +55,34 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-accent/20">
-      {/* Navigation and Theme Toggle */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="relative">
-          <NavigationIsland />
-          <div className="absolute top-0 right-0">
+      {/* Top Actions Bar - Mobile Friendly */}
+      <div className="container mx-auto px-4 py-3">
+        <div className="flex justify-between items-start mb-4">
+          {/* Left side - Support Button */}
+          <div className="flex items-center">
+            <SupportDialog variant="outline" size="sm" />
+          </div>
+          
+          {/* Right side - Theme Toggle and Profile */}
+          <div className="flex items-center gap-2">
             <ThemeToggle />
+            {user && (
+              <Link to="/profile">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-foreground hover:bg-primary/10"
+                >
+                  <User className="w-4 h-4" />
+                  <span className="hidden sm:inline">Perfil</span>
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
+        
+        {/* Navigation Island - Centered */}
+        <NavigationIsland />
       </div>
       
       <div className="container mx-auto px-4 py-8">
@@ -99,9 +123,7 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Gráficos */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          {/* Gráfico de Pizza - Despesas por Categoria */}
           <Card className="p-6">
             <h3 className="text-xl font-bold mb-4 text-center">Despesas por Categoria</h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -123,7 +145,6 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </Card>
 
-          {/* Gráfico de Barras - Receitas vs Despesas */}
           <Card className="p-6">
             <h3 className="text-xl font-bold mb-4 text-center">Receitas vs Despesas</h3>
             <ResponsiveContainer width="100%" height={300}>
@@ -138,7 +159,6 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Gráfico de Tipos de Despesas */}
         {dadosTipos.length > 0 && (
           <Card className="p-6">
             <h3 className="text-xl font-bold mb-4 text-center">Despesas por Tipo</h3>
