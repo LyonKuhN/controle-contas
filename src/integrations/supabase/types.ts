@@ -143,6 +143,30 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       receitas: {
         Row: {
           categoria_id: string | null
@@ -193,6 +217,7 @@ export type Database = {
       subscribers: {
         Row: {
           created_at: string
+          display_name: string | null
           email: string
           id: string
           stripe_customer_id: string | null
@@ -204,6 +229,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          display_name?: string | null
           email: string
           id?: string
           stripe_customer_id?: string | null
@@ -215,6 +241,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          display_name?: string | null
           email?: string
           id?: string
           stripe_customer_id?: string | null

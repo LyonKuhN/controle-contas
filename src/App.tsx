@@ -9,6 +9,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import SubscriptionGuard from "@/components/SubscriptionGuard";
 import TrialExpiredOverlay from "@/components/TrialExpiredOverlay";
+import DisplayNameModal from "@/components/DisplayNameModal";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -17,8 +18,71 @@ import Receitas from "./pages/Receitas";
 import ControleContas from "./pages/ControleContas";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
 
 const queryClient = new QueryClient();
+
+const AppContent = () => {
+  const { showDisplayNameModal, setShowDisplayNameModal } = useAuth();
+  const { createProfile } = useProfile();
+
+  const handleDisplayNameSubmit = async (displayName: string) => {
+    const result = await createProfile(displayName);
+    if (!result.error) {
+      setShowDisplayNameModal(false);
+    }
+    return result;
+  };
+
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <SubscriptionGuard>
+              <Index />
+            </SubscriptionGuard>
+          </ProtectedRoute>
+        } />
+        <Route path="/profile" element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        } />
+        <Route path="/despesas" element={
+          <ProtectedRoute>
+            <SubscriptionGuard>
+              <Despesas />
+            </SubscriptionGuard>
+          </ProtectedRoute>
+        } />
+        <Route path="/receitas" element={
+          <ProtectedRoute>
+            <SubscriptionGuard>
+              <Receitas />
+            </SubscriptionGuard>
+          </ProtectedRoute>
+        } />
+        <Route path="/controle-contas" element={
+          <ProtectedRoute>
+            <SubscriptionGuard>
+              <ControleContas />
+            </SubscriptionGuard>
+          </ProtectedRoute>
+        } />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+      <TrialExpiredOverlay />
+      <DisplayNameModal 
+        isOpen={showDisplayNameModal} 
+        onSubmit={handleDisplayNameSubmit}
+      />
+    </>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -28,45 +92,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Landing />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <SubscriptionGuard>
-                    <Index />
-                  </SubscriptionGuard>
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
-              <Route path="/despesas" element={
-                <ProtectedRoute>
-                  <SubscriptionGuard>
-                    <Despesas />
-                  </SubscriptionGuard>
-                </ProtectedRoute>
-              } />
-              <Route path="/receitas" element={
-                <ProtectedRoute>
-                  <SubscriptionGuard>
-                    <Receitas />
-                  </SubscriptionGuard>
-                </ProtectedRoute>
-              } />
-              <Route path="/controle-contas" element={
-                <ProtectedRoute>
-                  <SubscriptionGuard>
-                    <ControleContas />
-                  </SubscriptionGuard>
-                </ProtectedRoute>
-              } />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-            <TrialExpiredOverlay />
+            <AppContent />
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>

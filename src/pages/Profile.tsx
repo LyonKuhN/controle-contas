@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { useStripePrice } from '@/hooks/useStripePrice';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,13 +8,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
-import { LogOut, User, Key, ArrowLeft, Clock, Crown, CreditCard, Settings } from 'lucide-react';
+import { LogOut, User, Key, ArrowLeft, Clock, Crown, CreditCard, Settings, Edit2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import SubscriptionDialog from '@/components/SubscriptionDialog';
 
 const Profile = () => {
   const { user, signOut, subscriptionData, session, userName } = useAuth();
+  const { profile, updateProfile } = useProfile();
   const { priceData } = useStripePrice();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
@@ -23,10 +25,18 @@ const Profile = () => {
   const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
   const [isTrialActive, setIsTrialActive] = useState(true);
   const [showSubscriptionDialog, setShowSubscriptionDialog] = useState(false);
+  const [editingDisplayName, setEditingDisplayName] = useState(false);
+  const [displayName, setDisplayName] = useState('');
 
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
+
+  useEffect(() => {
+    if (profile?.display_name) {
+      setDisplayName(profile.display_name);
+    }
+  }, [profile]);
 
   useEffect(() => {
     const calculateTrialTime = () => {
@@ -87,6 +97,48 @@ const Profile = () => {
         description: "Erro ao fazer logout",
         variant: "destructive"
       });
+    }
+  };
+
+  const handleDisplayNameUpdate = async () => {
+    if (!displayName.trim()) {
+      toast({
+        title: "Erro",
+        description: "O nome de exibição não pode estar vazio",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (displayName.trim().length < 2) {
+      toast({
+        title: "Erro",
+        description: "O nome deve ter pelo menos 2 caracteres",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const result = await updateProfile(displayName.trim());
+      if (!result.error) {
+        setEditingDisplayName(false);
+      } else {
+        toast({
+          title: "Erro",
+          description: result.error,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar nome de exibição",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -284,14 +336,47 @@ const Profile = () => {
             
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name">Nome</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={userName || ''}
-                  disabled
-                  className="bg-muted"
-                />
+                <Label htmlFor="displayName">Nome de exibição</Label>
+                <div className="flex gap-2 mt-1">
+                  <Input
+                    id="displayName"
+                    type="text"
+                    value={displayName}
+                    onChange={(e) => setDisplayName(e.target.value)}
+                    disabled={!editingDisplayName}
+                    className={editingDisplayName ? '' : 'bg-muted'}
+                  />
+                  {editingDisplayName ? (
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={handleDisplayNameUpdate}
+                        disabled={loading}
+                        size="sm"
+                      >
+                        {loading ? 'Salvando...' : 'Salvar'}
+                      </Button>
+                      <Button 
+                        onClick={() => {
+                          setEditingDisplayName(false);
+                          setDisplayName(profile?.display_name || '');
+                        }}
+                        variant="outline"
+                        size="sm"
+                        disabled={loading}
+                      >
+                        Cancelar
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button 
+                      onClick={() => setEditingDisplayName(true)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
               <div>
                 <Label htmlFor="email">Email</Label>
@@ -303,7 +388,7 @@ const Profile = () => {
                   className="bg-muted"
                 />
                 <p className="text-sm text-muted-foreground mt-1">
-                  O email e nome não podem ser alterados
+                  O email não pode ser alterado
                 </p>
               </div>
             </div>
