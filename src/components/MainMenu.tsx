@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { User } from "lucide-react";
 import NavigationIsland from "./NavigationIsland";
+import ThemeToggle from "./ThemeToggle";
 import { useAuth } from "@/hooks/useAuth";
 
 const menuItems = [
@@ -38,14 +39,15 @@ const MainMenu = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Navigation Island and Profile Button */}
+      {/* Navigation Island, Theme Toggle and Profile Button */}
       <div className="container mx-auto px-4 py-6">
         <div className="relative">
           <NavigationIsland />
           
-          {/* Profile Button - positioned at the same height as navigation island */}
-          {user && (
-            <div className="absolute top-0 right-0">
+          {/* Theme Toggle and Profile Button - positioned at the same height as navigation island */}
+          <div className="absolute top-0 right-0 flex items-center gap-3">
+            <ThemeToggle />
+            {user && (
               <Link to="/profile">
                 <Button
                   variant="outline"
@@ -56,8 +58,8 @@ const MainMenu = () => {
                   Perfil
                 </Button>
               </Link>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
@@ -71,7 +73,7 @@ const MainMenu = () => {
               className="w-16 h-16 object-contain"
             />
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-              Controle Financeiro
+              LYONPAY
             </h1>
           </div>
           <p className="text-lg text-white/60 max-w-2xl mx-auto">

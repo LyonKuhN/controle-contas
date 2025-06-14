@@ -1,12 +1,21 @@
 
 import NavigationIsland from "@/components/NavigationIsland";
+import ThemeToggle from "@/components/ThemeToggle";
 import CadastroReceitas from "@/components/receitas/CadastroReceitas";
 import ListaReceitas from "@/components/receitas/ListaReceitas";
 
 const Receitas = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-accent/20">
-      <NavigationIsland />
+      {/* Navigation and Theme Toggle */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="relative">
+          <NavigationIsland />
+          <div className="absolute top-0 right-0">
+            <ThemeToggle />
+          </div>
+        </div>
+      </div>
       
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">

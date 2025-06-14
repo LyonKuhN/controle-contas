@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowRight, BarChart3, Shield, Smartphone, Zap, CheckCircle, Star } from 'lucide-react';
+import ThemeToggle from '@/components/ThemeToggle';
 
 const Landing = () => {
   const features = [
@@ -49,11 +50,12 @@ const Landing = () => {
               className="w-12 h-12 object-contain"
             />
             <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              FinanceControl
+              LYONPAY
             </span>
           </div>
           
-          <div className="flex gap-4">
+          <div className="flex gap-4 items-center">
+            <ThemeToggle />
             <Link to="/auth?mode=login">
               <Button variant="outline" className="border-primary/20 text-white hover:bg-primary/10">
                 Login
