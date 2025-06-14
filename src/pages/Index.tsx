@@ -1,10 +1,10 @@
-
 import { Card } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { User, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import NavigationIsland from "@/components/NavigationIsland";
 import ThemeToggle from "@/components/ThemeToggle";
+import SupportDialog from "@/components/SupportDialog";
 import TrialExpiredOverlay from "@/components/TrialExpiredOverlay";
 import TrialNotification from "@/components/TrialNotification";
 import { useAuth } from "@/hooks/useAuth";
@@ -68,8 +68,9 @@ const Index = () => {
         <div className="relative">
           <NavigationIsland />
           
-          {/* Theme Toggle and Profile Button - positioned at the same height as navigation island */}
+          {/* Theme Toggle, Support and Profile Button - positioned at the same height as navigation island */}
           <div className="absolute top-0 right-0 flex items-center gap-3">
+            <SupportDialog variant="outline" size="sm" />
             <ThemeToggle />
             {user && (
               <Link to="/profile">

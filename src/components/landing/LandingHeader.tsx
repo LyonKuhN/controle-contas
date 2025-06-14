@@ -2,6 +2,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import ThemeToggle from '@/components/ThemeToggle';
+import SupportDialog from '@/components/SupportDialog';
 
 const LandingHeader = () => {
   return (
@@ -19,6 +20,7 @@ const LandingHeader = () => {
         </div>
         
         <div className="flex gap-4 items-center">
+          <SupportDialog variant="outline" size="sm" />
           <ThemeToggle />
           <Link to="/auth?mode=login">
             <Button 

@@ -26,7 +26,6 @@ const Profile = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Calculate trial time remaining
   useEffect(() => {
     const calculateTrialTime = () => {
       if (subscriptionData?.subscribed) {
@@ -205,7 +204,7 @@ const Profile = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Back Button */}
         <div className="mb-8">
-          <Link to="/" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors">
+          <Link to="/dashboard" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors">
             <ArrowLeft className="w-4 h-4" />
             Voltar ao Menu
           </Link>

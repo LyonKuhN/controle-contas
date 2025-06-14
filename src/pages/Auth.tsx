@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,9 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/hooks/useAuth';
-import { Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Eye, EyeOff, ArrowLeft, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'react-router-dom';
+import EmailConfirmationDialog from '@/components/EmailConfirmationDialog';
 
 const isValidEmail = (email: string): boolean => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -36,15 +38,41 @@ const Auth = () => {
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showEmailConfirmation, setShowEmailConfirmation] = useState(false);
+  const [signupEmail, setSignupEmail] = useState('');
 
   useEffect(() => {
     const modeParam = searchParams.get('mode');
+    const errorParam = searchParams.get('error');
+    
     if (modeParam === 'signup') {
       setMode('signup');
     } else {
       setMode('login');
     }
-  }, [searchParams]);
+
+    // Handle error messages from URL params
+    if (errorParam) {
+      switch (errorParam) {
+        case 'not-confirmed':
+          toast({
+            title: "Email não confirmado",
+            description: "Por favor, confirme seu email antes de fazer login.",
+            variant: "destructive"
+          });
+          break;
+        case 'verification-failed':
+          toast({
+            title: "Erro na verificação",
+            description: "Houve um problema ao verificar seu email. Tente fazer login.",
+            variant: "destructive"
+          });
+          break;
+        default:
+          break;
+      }
+    }
+  }, [searchParams, toast]);
 
   useEffect(() => {
     if (user) {
@@ -93,6 +121,36 @@ const Auth = () => {
     return true;
   };
 
+  const getAuthErrorMessage = (error: any): string => {
+    const errorMessage = error?.message || '';
+    
+    if (errorMessage.includes('Invalid login credentials') || errorMessage.includes('invalid_credentials')) {
+      return 'Email ou senha incorretos. Verifique suas credenciais e tente novamente.';
+    }
+    
+    if (errorMessage.includes('Email not confirmed')) {
+      return 'Seu email ainda não foi confirmado. Verifique sua caixa de entrada.';
+    }
+    
+    if (errorMessage.includes('too_many_requests')) {
+      return 'Muitas tentativas de login. Aguarde alguns minutos antes de tentar novamente.';
+    }
+    
+    if (errorMessage.includes('signup_disabled')) {
+      return 'Cadastro temporariamente desabilitado. Tente novamente mais tarde.';
+    }
+    
+    if (errorMessage.includes('weak_password') || errorMessage.includes('password')) {
+      return 'A senha deve ter pelo menos 6 caracteres e ser mais forte.';
+    }
+    
+    if (errorMessage.includes('email')) {
+      return 'Email inválido ou já está em uso.';
+    }
+    
+    return 'Ocorreu um erro inesperado. Tente novamente.';
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -107,24 +165,41 @@ const Auth = () => {
     setIsLoading(true);
     try {
       if (mode === 'login') {
-        await signIn(email, password);
+        const { error } = await signIn(email, password);
+        
+        if (error) {
+          throw error;
+        }
+        
         toast({
           title: "Login realizado com sucesso!",
           description: "Redirecionando para o painel...",
-        })
+        });
       } else {
-        await signUp(email, password);
-        toast({
-          title: "Conta criada com sucesso!",
-          description: "Redirecionando para o painel...",
-        })
+        const { error } = await signUp(email, password);
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Show email confirmation dialog instead of toast
+        setSignupEmail(email);
+        setShowEmailConfirmation(true);
+        
+        // Clear form
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
       }
     } catch (error: any) {
+      console.error('Auth error:', error);
+      const friendlyMessage = getAuthErrorMessage(error);
+      
       toast({
         variant: "destructive",
-        title: "Erro ao autenticar",
-        description: error?.message || 'Ocorreu um erro ao tentar autenticar. Verifique suas credenciais e tente novamente.',
-      })
+        title: mode === 'login' ? "Erro ao fazer login" : "Erro ao criar conta",
+        description: friendlyMessage,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -224,7 +299,7 @@ const Auth = () => {
                       <Input
                         id="password"
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="Senha"
+                        placeholder="Senha (mínimo 6 caracteres)"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         onBlur={validatePassword}
@@ -256,6 +331,17 @@ const Auth = () => {
                     </div>
                     {confirmPasswordError && <Alert variant="destructive"><AlertDescription>{confirmPasswordError}</AlertDescription></Alert>}
                   </div>
+                  
+                  <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-200">Importante</p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">
+                        Após criar sua conta, você receberá um email de confirmação. É necessário confirmar seu email para acessar o sistema.
+                      </p>
+                    </div>
+                  </div>
+                  
                   <Button type="submit" disabled={isLoading}>
                     {isLoading ? 'Criando conta...' : 'Criar Conta'}
                   </Button>
@@ -266,6 +352,12 @@ const Auth = () => {
           </CardContent>
         </Card>
       </div>
+
+      <EmailConfirmationDialog
+        isOpen={showEmailConfirmation}
+        onClose={() => setShowEmailConfirmation(false)}
+        email={signupEmail}
+      />
     </div>
   );
 };
