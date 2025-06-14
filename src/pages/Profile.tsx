@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
-import { LogOut, User, Key, ArrowLeft } from 'lucide-react';
+import { LogOut, User, Key, ArrowLeft, Clock, Crown, CreditCard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const Profile = () => {
@@ -17,10 +17,41 @@ const Profile = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [timeRemaining, setTimeRemaining] = useState({ days: 0, hours: 0, minutes: 0 });
+  const [isTrialActive, setIsTrialActive] = useState(true);
 
   if (!user) {
     return <Navigate to="/auth" replace />;
   }
+
+  // Simular período de teste (3 dias a partir do cadastro)
+  useEffect(() => {
+    const calculateTrialTime = () => {
+      // Simular data de cadastro (para demo, usar uma data fixa)
+      const signupDate = new Date(user.created_at || new Date());
+      const trialEndDate = new Date(signupDate.getTime() + (3 * 24 * 60 * 60 * 1000)); // 3 dias
+      const now = new Date();
+      
+      const difference = trialEndDate.getTime() - now.getTime();
+      
+      if (difference > 0) {
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        
+        setTimeRemaining({ days, hours, minutes });
+        setIsTrialActive(true);
+      } else {
+        setIsTrialActive(false);
+        setTimeRemaining({ days: 0, hours: 0, minutes: 0 });
+      }
+    };
+
+    calculateTrialTime();
+    const interval = setInterval(calculateTrialTime, 60000); // Atualizar a cada minuto
+
+    return () => clearInterval(interval);
+  }, [user.created_at]);
 
   const handleLogout = async () => {
     try {
@@ -61,10 +92,6 @@ const Profile = () => {
 
     setLoading(true);
     try {
-      // Aqui você implementaria a mudança de senha com Supabase
-      // const { error } = await supabase.auth.updateUser({ password: newPassword });
-      
-      // Simulando sucesso por enquanto
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast({
@@ -84,6 +111,14 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSubscribe = () => {
+    toast({
+      title: "Redirecionando...",
+      description: "Você será redirecionado para a página de pagamento.",
+    });
+    // Aqui será implementada a integração com Stripe
   };
 
   return (
@@ -107,6 +142,65 @@ const Profile = () => {
               Gerencie suas informações pessoais e configurações de conta
             </p>
           </div>
+
+          {/* Trial Status Card */}
+          <Card className="p-6 border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10">
+            <div className="flex items-center gap-3 mb-4">
+              <Clock className="w-5 h-5 text-primary" />
+              <h2 className="text-xl font-semibold">Status do Período Gratuito</h2>
+            </div>
+            
+            {isTrialActive ? (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <p className="text-lg mb-2">Tempo restante do seu teste grátis:</p>
+                  <div className="flex justify-center gap-4 mb-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary">{timeRemaining.days}</div>
+                      <div className="text-sm text-muted-foreground">Dias</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary">{timeRemaining.hours}</div>
+                      <div className="text-sm text-muted-foreground">Horas</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary">{timeRemaining.minutes}</div>
+                      <div className="text-sm text-muted-foreground">Minutos</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="bg-primary/20 text-primary p-4 rounded-lg text-center">
+                  <p className="text-sm">
+                    ✨ Aproveite todos os recursos premium durante seu período de teste!
+                  </p>
+                </div>
+
+                <Button 
+                  onClick={handleSubscribe}
+                  className="w-full bg-gradient-to-r from-primary to-accent text-black font-semibold py-6"
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  Assinar Agora - R$ 29,90/mês
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center space-y-4">
+                <div className="bg-destructive/20 text-destructive p-4 rounded-lg">
+                  <p className="font-semibold">Seu período gratuito expirou</p>
+                  <p className="text-sm">Assine agora para continuar usando todos os recursos</p>
+                </div>
+                
+                <Button 
+                  onClick={handleSubscribe}
+                  className="w-full bg-gradient-to-r from-primary to-accent text-black font-semibold py-6"
+                >
+                  <CreditCard className="w-4 h-4 mr-2" />
+                  Assinar Premium - R$ 29,90/mês
+                </Button>
+              </div>
+            )}
+          </Card>
 
           {/* Account Info Card */}
           <Card className="p-6">

@@ -38,19 +38,19 @@ const MainMenu = () => {
 
   return (
     <div className="min-h-screen">
-      {/* Navigation Island */}
-      <NavigationIsland />
-
-      <div className="container mx-auto px-4">
-        {/* Header with Subtle Title and Profile Button */}
-        <div className="text-center mb-16 relative">
+      {/* Navigation Island and Profile Button */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="relative">
+          <NavigationIsland />
+          
+          {/* Profile Button - positioned at the same height as navigation island */}
           {user && (
             <div className="absolute top-0 right-0">
               <Link to="/profile">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex items-center gap-2"
+                  className="nav-island flex items-center gap-2 bg-transparent border-primary/20 text-white/80 hover:text-white hover:bg-white/20"
                 >
                   <User className="w-4 h-4" />
                   Perfil
@@ -58,10 +58,22 @@ const MainMenu = () => {
               </Link>
             </div>
           )}
-          
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-4">
-            Controle Financeiro
-          </h1>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4">
+        {/* Header with Subtle Title */}
+        <div className="text-center mb-16">
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <img 
+              src="/lovable-uploads/4fec2beb-6c7e-4cea-a53b-51b0335866ca.png" 
+              alt="Logo"
+              className="w-16 h-16 object-contain"
+            />
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
+              Controle Financeiro
+            </h1>
+          </div>
           <p className="text-lg text-white/60 max-w-2xl mx-auto">
             Gerencie suas finanças pessoais de forma simples e eficiente
           </p>
