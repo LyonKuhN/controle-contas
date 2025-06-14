@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Card } from '@/components/ui/card';
@@ -7,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useToast } from '@/hooks/use-toast';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate, Link } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import SmsConfirmation from '@/components/SmsConfirmation';
 
 type ConfirmationMethod = 'email' | 'sms';
@@ -104,7 +104,7 @@ const Auth = () => {
 
   if (showSmsConfirmation) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-accent/20 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/20 flex items-center justify-center">
         <SmsConfirmation
           phone={phone}
           onBack={handleBackFromSms}
@@ -116,7 +116,7 @@ const Auth = () => {
 
   if (showSuccessMessage) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-accent/20 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/20 flex items-center justify-center">
         <Card className="p-8 w-full max-w-md">
           <div className="text-center space-y-4">
             <div className="text-4xl">✅</div>
@@ -136,86 +136,96 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/20 via-background to-accent/20 flex items-center justify-center">
-      <Card className="p-8 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-center mb-8">
-          {isLogin ? 'Entrar' : 'Criar Conta'}
-        </h1>
-        
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="password">Senha</Label>
-            <Input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          {!isLogin && (
-            <>
-              <div>
-                <Label>Método de confirmação</Label>
-                <RadioGroup
-                  value={confirmationMethod}
-                  onValueChange={(value: ConfirmationMethod) => setConfirmationMethod(value)}
-                  className="mt-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="email" id="email-confirm" />
-                    <Label htmlFor="email-confirm">Email</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="sms" id="sms-confirm" />
-                    <Label htmlFor="sms-confirm">SMS</Label>
-                  </div>
-                </RadioGroup>
-              </div>
-
-              {confirmationMethod === 'sms' && (
-                <div>
-                  <Label htmlFor="phone">Telefone (com DDD)</Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    placeholder="(11) 99999-9999"
-                    required={confirmationMethod === 'sms'}
-                  />
-                </div>
-              )}
-            </>
-          )}
-          
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Criar Conta')}
-          </Button>
-        </form>
-        
-        <div className="mt-4 text-center">
-          <button
-            type="button"
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-primary hover:underline"
-          >
-            {isLogin ? 'Não tem conta? Criar uma' : 'Já tem conta? Entrar'}
-          </button>
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/20 flex items-center justify-center">
+      <div className="w-full max-w-md space-y-6">
+        {/* Back to Landing Button */}
+        <div className="text-center">
+          <Link to="/landing" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors">
+            <ArrowLeft className="w-4 h-4" />
+            Voltar à página inicial
+          </Link>
         </div>
-      </Card>
+
+        <Card className="p-8 w-full">
+          <h1 className="text-3xl font-bold text-center mb-8 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            {isLogin ? 'Entrar' : 'Criar Conta'}
+          </h1>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            
+            <div>
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            {!isLogin && (
+              <>
+                <div>
+                  <Label>Método de confirmação</Label>
+                  <RadioGroup
+                    value={confirmationMethod}
+                    onValueChange={(value: ConfirmationMethod) => setConfirmationMethod(value)}
+                    className="mt-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="email" id="email-confirm" />
+                      <Label htmlFor="email-confirm">Email</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="sms" id="sms-confirm" />
+                      <Label htmlFor="sms-confirm">SMS</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+
+                {confirmationMethod === 'sms' && (
+                  <div>
+                    <Label htmlFor="phone">Telefone (com DDD)</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="(11) 99999-9999"
+                      required={confirmationMethod === 'sms'}
+                    />
+                  </div>
+                )}
+              </>
+            )}
+            
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Carregando...' : (isLogin ? 'Entrar' : 'Criar Conta')}
+            </Button>
+          </form>
+          
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-primary hover:underline"
+            >
+              {isLogin ? 'Não tem conta? Criar uma' : 'Já tem conta? Entrar'}
+            </button>
+          </div>
+        </Card>
+      </div>
     </div>
   );
 };

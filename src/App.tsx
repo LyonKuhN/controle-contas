@@ -12,6 +12,8 @@ import Despesas from "./pages/Despesas";
 import Receitas from "./pages/Receitas";
 import ControleContas from "./pages/ControleContas";
 import Auth from "./pages/Auth";
+import Profile from "./pages/Profile";
+import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,10 +26,16 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            <Route path="/landing" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Index />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             } />
             <Route path="/dashboard" element={
