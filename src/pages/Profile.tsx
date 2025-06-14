@@ -7,11 +7,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Navigate } from 'react-router-dom';
-import { LogOut, User, Key, ArrowLeft, Clock, Crown, CreditCard } from 'lucide-react';
+import { LogOut, User, Key, ArrowLeft, Clock, Crown, CreditCard, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 const Profile = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, subscriptionData, checkSubscription, session } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -24,12 +25,16 @@ const Profile = () => {
     return <Navigate to="/auth" replace />;
   }
 
-  // Simular período de teste (3 dias a partir do cadastro)
+  // Calculate trial time remaining
   useEffect(() => {
     const calculateTrialTime = () => {
-      // Simular data de cadastro (para demo, usar uma data fixa)
+      if (subscriptionData?.subscribed) {
+        setIsTrialActive(false);
+        return;
+      }
+
       const signupDate = new Date(user.created_at || new Date());
-      const trialEndDate = new Date(signupDate.getTime() + (3 * 24 * 60 * 60 * 1000)); // 3 dias
+      const trialEndDate = new Date(signupDate.getTime() + (3 * 24 * 60 * 60 * 1000)); // 3 days
       const now = new Date();
       
       const difference = trialEndDate.getTime() - now.getTime();
@@ -48,10 +53,10 @@ const Profile = () => {
     };
 
     calculateTrialTime();
-    const interval = setInterval(calculateTrialTime, 60000); // Atualizar a cada minuto
+    const interval = setInterval(calculateTrialTime, 60000);
 
     return () => clearInterval(interval);
-  }, [user.created_at]);
+  }, [user.created_at, subscriptionData]);
 
   const handleLogout = async () => {
     try {
@@ -113,18 +118,89 @@ const Profile = () => {
     }
   };
 
-  const handleSubscribe = () => {
-    toast({
-      title: "Redirecionando...",
-      description: "Você será redirecionado para a página de pagamento.",
-    });
-    // Aqui será implementada a integração com Stripe
+  const handleSubscribe = async () => {
+    if (!session) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error creating checkout:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao iniciar processo de assinatura. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleManageSubscription = async () => {
+    if (!session) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('customer-portal', {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error) {
+      console.error('Error opening customer portal:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao abrir portal do cliente. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefreshSubscription = async () => {
+    setLoading(true);
+    try {
+      await checkSubscription();
+      toast({
+        title: "Status atualizado",
+        description: "Status da assinatura foi verificado e atualizado."
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao verificar status da assinatura",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8">
-        {/* Voltar Button */}
+        {/* Back Button */}
         <div className="mb-8">
           <Link to="/" className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors">
             <ArrowLeft className="w-4 h-4" />
@@ -143,14 +219,47 @@ const Profile = () => {
             </p>
           </div>
 
-          {/* Trial Status Card */}
+          {/* Subscription Status Card */}
           <Card className="p-6 border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10">
             <div className="flex items-center gap-3 mb-4">
               <Clock className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-semibold">Status do Período Gratuito</h2>
+              <h2 className="text-xl font-semibold">Status da Assinatura</h2>
+              <Button 
+                onClick={handleRefreshSubscription}
+                disabled={loading}
+                variant="outline"
+                size="sm"
+                className="ml-auto"
+              >
+                Atualizar Status
+              </Button>
             </div>
             
-            {isTrialActive ? (
+            {subscriptionData?.subscribed ? (
+              <div className="space-y-4">
+                <div className="bg-green-500/20 text-green-700 p-4 rounded-lg text-center">
+                  <p className="font-semibold text-lg">✅ Assinatura Ativa</p>
+                  <p className="text-sm">
+                    Plano: {subscriptionData.subscription_tier || 'Premium'}
+                  </p>
+                  {subscriptionData.subscription_end && (
+                    <p className="text-sm">
+                      Renova em: {new Date(subscriptionData.subscription_end).toLocaleDateString('pt-BR')}
+                    </p>
+                  )}
+                </div>
+                
+                <Button 
+                  onClick={handleManageSubscription}
+                  disabled={loading}
+                  className="w-full"
+                  variant="outline"
+                >
+                  <Settings className="w-4 h-4 mr-2" />
+                  {loading ? 'Carregando...' : 'Gerenciar Assinatura'}
+                </Button>
+              </div>
+            ) : isTrialActive ? (
               <div className="space-y-4">
                 <div className="text-center">
                   <p className="text-lg mb-2">Tempo restante do seu teste grátis:</p>
@@ -178,10 +287,11 @@ const Profile = () => {
 
                 <Button 
                   onClick={handleSubscribe}
+                  disabled={loading}
                   className="w-full bg-gradient-to-r from-primary to-accent text-black font-semibold py-6"
                 >
                   <Crown className="w-4 h-4 mr-2" />
-                  Assinar Agora - R$ 29,90/mês
+                  {loading ? 'Processando...' : 'Assinar Agora - R$ 29,90/mês'}
                 </Button>
               </div>
             ) : (
@@ -193,10 +303,11 @@ const Profile = () => {
                 
                 <Button 
                   onClick={handleSubscribe}
+                  disabled={loading}
                   className="w-full bg-gradient-to-r from-primary to-accent text-black font-semibold py-6"
                 >
                   <CreditCard className="w-4 h-4 mr-2" />
-                  Assinar Premium - R$ 29,90/mês
+                  {loading ? 'Processando...' : 'Assinar Premium - R$ 29,90/mês'}
                 </Button>
               </div>
             )}
