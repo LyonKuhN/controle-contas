@@ -29,6 +29,22 @@ export const useReceitas = () => {
       console.log('useReceitas: Iniciando busca de recebimentos...');
       
       try {
+        // Verificar se o usuário está autenticado
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        console.log('useReceitas: Usuário autenticado:', user?.email || 'Nenhum usuário');
+        
+        if (userError) {
+          console.error('useReceitas: Erro ao verificar usuário:', userError);
+          throw new Error(`Erro de autenticação: ${userError.message}`);
+        }
+        
+        if (!user) {
+          console.error('useReceitas: Usuário não autenticado');
+          throw new Error('Usuário não autenticado');
+        }
+
+        console.log('useReceitas: Fazendo query para a tabela receitas...');
+        
         const { data, error: queryError } = await supabase
           .from('receitas')
           .select(`
@@ -37,12 +53,27 @@ export const useReceitas = () => {
           `)
           .order('data_recebimento', { ascending: true });
 
+        console.log('useReceitas: Resposta da query:', { 
+          data: data?.length || 0, 
+          error: queryError,
+          firstItem: data?.[0] || null 
+        });
+
         if (queryError) {
           console.error('useReceitas: Erro ao buscar recebimentos:', queryError);
+          
+          // Verificar se é erro de RLS
+          if (queryError.code === 'PGRST116' || queryError.message?.includes('RLS')) {
+            console.error('useReceitas: Erro de RLS detectado - verifique as políticas de segurança');
+            throw new Error('Erro de permissão: Verifique se as políticas RLS estão configuradas corretamente');
+          }
+          
           throw new Error(`Erro ao buscar recebimentos: ${queryError.message}`);
         }
         
         console.log('useReceitas: Recebimentos carregados com sucesso:', data?.length || 0, 'items');
+        console.log('useReceitas: Dados recebidos:', data);
+        
         return (data as Receita[]) || [];
         
       } catch (err) {
