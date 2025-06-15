@@ -16,22 +16,22 @@ export const useStripePrice = () => {
   useEffect(() => {
     const fetchPrice = async () => {
       try {
+        console.log('useStripePrice: Iniciando busca do preço...');
+        
         const { data, error } = await supabase.functions.invoke('get-stripe-price');
         
         if (error) {
+          console.error('useStripePrice: Erro na função:', error);
           throw error;
         }
         
+        console.log('useStripePrice: Preço carregado com sucesso:', data);
         setPriceData(data);
+        setError(null);
       } catch (err) {
-        console.error('Error fetching price:', err);
-        setError(err instanceof Error ? err.message : 'Error fetching price');
-        // Fallback to default price
-        setPriceData({
-          amount: 29.90,
-          currency: 'brl',
-          formatted: 'R$ 29,90'
-        });
+        console.error('useStripePrice: Erro ao buscar preço:', err);
+        setError(err instanceof Error ? err.message : 'Erro ao buscar preço');
+        setPriceData(null); // Importante: não definir fallback aqui
       } finally {
         setLoading(false);
       }

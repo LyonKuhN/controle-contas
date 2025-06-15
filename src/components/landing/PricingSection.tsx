@@ -8,6 +8,14 @@ import { useStripePrice } from '@/hooks/useStripePrice';
 const PricingSection = () => {
   const { priceData, loading, error } = useStripePrice();
 
+  console.log('PricingSection: Estado atual:', { 
+    hasPrice: !!priceData, 
+    loading, 
+    hasError: !!error,
+    errorMessage: error,
+    priceData
+  });
+
   // Determinar o preço a exibir
   const getDisplayPrice = () => {
     if (loading) return 'Carregando...';
@@ -47,6 +55,9 @@ const PricingSection = () => {
               )}
               {(error || !priceData) && !loading && (
                 <div className="text-muted-foreground mb-6">Temporariamente indisponível</div>
+              )}
+              {loading && (
+                <div className="text-muted-foreground mb-6">Verificando preço...</div>
               )}
               
               <div className="bg-primary/20 text-primary text-sm font-semibold py-2 px-4 rounded-full mb-6">
