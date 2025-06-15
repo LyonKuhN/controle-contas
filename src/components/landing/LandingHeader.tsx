@@ -25,17 +25,14 @@ const LandingHeader = () => {
           {user ? (
             <UserMenu />
           ) : (
-            <>
-              <UserMenu />
-              <Link to="/auth?mode=login">
-                <Button 
-                  variant="outline" 
-                  className="border-2 border-primary/60 text-foreground bg-background/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground transition-all duration-300 font-semibold"
-                >
-                  Login
-                </Button>
-              </Link>
-            </>
+            <Link to="/auth?mode=login">
+              <Button 
+                variant="outline" 
+                className="border-2 border-primary/60 text-foreground bg-background/80 backdrop-blur-sm hover:bg-primary hover:text-primary-foreground transition-all duration-300 font-semibold"
+              >
+                Login
+              </Button>
+            </Link>
           )}
         </div>
       </div>
