@@ -12,10 +12,10 @@ import { useCategorias } from "@/hooks/useCategorias";
 interface EditReceitaDialogProps {
   receita: any;
   open: boolean;
-  onClose: () => void;
+  onOpenChange: (open: boolean) => void;
 }
 
-const EditReceitaDialog = ({ receita, open, onClose }: EditReceitaDialogProps) => {
+const EditReceitaDialog = ({ receita, open, onOpenChange }: EditReceitaDialogProps) => {
   const { updateReceita } = useReceitas();
   const { categorias } = useCategorias();
   
@@ -63,7 +63,7 @@ const EditReceitaDialog = ({ receita, open, onClose }: EditReceitaDialogProps) =
       tipo: formData.tipo as 'fixa' | 'variavel'
     }, {
       onSuccess: () => {
-        onClose();
+        onOpenChange(false);
       }
     });
   };
@@ -71,7 +71,7 @@ const EditReceitaDialog = ({ receita, open, onClose }: EditReceitaDialogProps) =
   const categoriasDisponiveis = categorias.filter(cat => cat.tipo === 'receita');
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Editar Receita</DialogTitle>
@@ -157,7 +157,7 @@ const EditReceitaDialog = ({ receita, open, onClose }: EditReceitaDialogProps) =
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={onClose}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button type="submit" disabled={updateReceita.isPending}>
