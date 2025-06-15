@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -26,26 +25,48 @@ export const useReceitas = () => {
   const { data: receitas = [], isLoading, error } = useQuery({
     queryKey: ['receitas'],
     queryFn: async () => {
-      console.log('useReceitas: === INICIANDO BUSCA SIMPLIFICADA ===');
+      console.log('🔍 === INÍCIO DA BUSCA RECEITAS ===');
+      console.log('🔍 URL Supabase:', 'https://ncjcsfnvyungxfmqszpz.supabase.co');
       
       try {
-        // Verificar autenticação primeiro
+        // Log da tentativa de autenticação
+        console.log('🔍 Step 1: Verificando autenticação...');
+        const authStart = performance.now();
+        
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
+        const authEnd = performance.now();
+        console.log(`🔍 Step 1 completo em ${authEnd - authStart}ms`);
+        
         if (userError) {
-          console.error('useReceitas: Erro de autenticação:', userError);
+          console.error('❌ Erro de autenticação:', {
+            message: userError.message,
+            status: userError.status,
+            details: userError
+          });
           throw new Error(`Erro de autenticação: ${userError.message}`);
         }
         
         if (!user) {
-          console.error('useReceitas: Usuário não autenticado');
+          console.error('❌ Usuário não autenticado - user é null');
           throw new Error('Usuário não autenticado');
         }
 
-        console.log('useReceitas: Usuário autenticado:', user.email);
+        console.log('✅ Usuário autenticado:', {
+          id: user.id,
+          email: user.email,
+          aud: user.aud,
+          role: user.role
+        });
 
-        // Buscar receitas com query simplificada
-        const { data, error: queryError } = await supabase
+        // Log da query ao banco
+        console.log('🔍 Step 2: Executando query no Supabase...');
+        console.log('🔍 Query SQL: SELECT id, descricao, valor, categoria_id, data_recebimento, recebido, observacoes, categoria:categorias(nome, cor) FROM receitas WHERE user_id = ?');
+        console.log('🔍 Parâmetros: user_id =', user.id);
+        
+        const queryStart = performance.now();
+        
+        const { data, error: queryError, status, statusText } = await supabase
           .from('receitas')
           .select(`
             id,
@@ -60,43 +81,71 @@ export const useReceitas = () => {
           .eq('user_id', user.id)
           .order('data_recebimento', { ascending: true });
 
-        console.log('useReceitas: Resultado da query:', { 
-          data: data, 
-          dataLength: data?.length || 0,
+        const queryEnd = performance.now();
+        console.log(`🔍 Step 2 completo em ${queryEnd - queryStart}ms`);
+
+        // Log detalhado da resposta
+        console.log('📊 Resposta da API:', {
+          status,
+          statusText,
+          data,
+          dataType: typeof data,
+          dataLength: data?.length,
           error: queryError,
-          userId: user.id
+          rawResponse: { data, error: queryError }
         });
 
         if (queryError) {
-          console.error('useReceitas: Erro na query:', queryError);
+          console.error('❌ Erro na query:', {
+            message: queryError.message,
+            details: queryError.details,
+            hint: queryError.hint,
+            code: queryError.code
+          });
           throw new Error(`Erro ao buscar receitas: ${queryError.message}`);
         }
         
         const result = (data as Receita[]) || [];
-        console.log('useReceitas: === BUSCA CONCLUÍDA ===', { 
-          total: result.length,
-          receitas: result.slice(0, 2) // Log das primeiras 2 receitas para debug
+        
+        console.log('✅ Query executada com sucesso:', {
+          totalReceitas: result.length,
+          primeiraReceita: result[0] || 'Nenhuma receita encontrada',
+          ultimaReceita: result[result.length - 1] || 'Nenhuma receita encontrada'
         });
         
+        console.log('🔍 === FIM DA BUSCA RECEITAS ===');
         return result;
         
       } catch (err: any) {
-        console.error('useReceitas: === ERRO FATAL ===', err);
+        console.error('💥 === ERRO FATAL NA BUSCA ===', {
+          name: err.name,
+          message: err.message,
+          stack: err.stack,
+          cause: err.cause
+        });
         throw err;
       }
     },
-    retry: 1,
-    retryDelay: 1000,
-    staleTime: 0, // Sempre buscar dados frescos para debug
+    retry: (failureCount, error) => {
+      console.log(`🔄 Tentativa ${failureCount + 1} falhou:`, error.message);
+      return failureCount < 2; // Máximo 3 tentativas
+    },
+    retryDelay: (attemptIndex) => {
+      const delay = Math.min(1000 * 2 ** attemptIndex, 30000);
+      console.log(`⏰ Aguardando ${delay}ms antes da próxima tentativa...`);
+      return delay;
+    },
+    staleTime: 0,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  console.log('useReceitas: Estado atual:', { 
+  console.log('📈 Estado atual do hook:', { 
     receitasCount: receitas?.length || 0, 
     isLoading, 
     hasError: !!error,
-    errorMessage: error?.message
+    errorMessage: error?.message,
+    errorDetails: error
   });
 
   const createReceita = useMutation({

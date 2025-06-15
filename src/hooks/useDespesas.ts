@@ -29,24 +29,33 @@ export const useDespesas = () => {
   const { data: despesas = [], isLoading, error } = useQuery({
     queryKey: ['despesas'],
     queryFn: async () => {
-      console.log('useDespesas: === INICIANDO BUSCA SIMPLIFICADA ===');
+      console.log('🔍 === INÍCIO DA BUSCA DESPESAS ===');
       
       try {
+        console.log('🔍 Step 1: Verificando autenticação...');
+        const authStart = performance.now();
+        
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         
+        const authEnd = performance.now();
+        console.log(`🔍 Step 1 completo em ${authEnd - authStart}ms`);
+        
         if (userError) {
-          console.error('useDespesas: Erro de autenticação:', userError);
+          console.error('❌ Erro de autenticação despesas:', userError);
           throw new Error(`Erro de autenticação: ${userError.message}`);
         }
         
         if (!user) {
-          console.error('useDespesas: Usuário não autenticado');
+          console.error('❌ Usuário não autenticado para despesas');
           throw new Error('Usuário não autenticado');
         }
 
-        console.log('useDespesas: Usuário autenticado:', user.email);
+        console.log('✅ Usuário autenticado para despesas:', user.email);
 
-        const { data, error: queryError } = await supabase
+        console.log('🔍 Step 2: Executando query despesas...');
+        const queryStart = performance.now();
+
+        const { data, error: queryError, status } = await supabase
           .from('despesas')
           .select(`
             id,
@@ -68,24 +77,27 @@ export const useDespesas = () => {
           .eq('is_modelo', false)
           .order('data_vencimento', { ascending: true });
 
-        console.log('useDespesas: Resultado da query:', { 
-          data: data, 
+        const queryEnd = performance.now();
+        console.log(`🔍 Step 2 despesas completo em ${queryEnd - queryStart}ms`);
+
+        console.log('📊 Resposta da API despesas:', {
+          status,
+          data,
           dataLength: data?.length || 0,
-          error: queryError,
-          userId: user.id
+          error: queryError
         });
 
         if (queryError) {
-          console.error('useDespesas: Erro na query:', queryError);
+          console.error('❌ Erro na query despesas:', queryError);
           throw new Error(`Erro ao buscar despesas: ${queryError.message}`);
         }
         
         const result = (data as Despesa[]) || [];
-        console.log('useDespesas: === BUSCA CONCLUÍDA ===', { total: result.length });
+        console.log('✅ Despesas carregadas:', result.length);
         return result;
         
       } catch (err: any) {
-        console.error('useDespesas: === ERRO FATAL ===', err);
+        console.error('💥 === ERRO FATAL DESPESAS ===', err);
         throw err;
       }
     },
@@ -96,7 +108,7 @@ export const useDespesas = () => {
     refetchOnWindowFocus: false,
   });
 
-  console.log('useDespesas: Estado atual:', { 
+  console.log('📈 Estado despesas:', { 
     despesasCount: despesas?.length || 0, 
     isLoading, 
     hasError: !!error,
