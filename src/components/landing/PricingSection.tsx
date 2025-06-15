@@ -6,7 +6,24 @@ import { CheckCircle } from 'lucide-react';
 import { useStripePrice } from '@/hooks/useStripePrice';
 
 const PricingSection = () => {
-  const { priceData, loading } = useStripePrice();
+  const { priceData, loading, error } = useStripePrice();
+
+  // Determinar o preço a exibir
+  const getDisplayPrice = () => {
+    if (loading) return 'Carregando...';
+    if (error || !priceData) return 'Indisponível';
+    return priceData.formatted;
+  };
+
+  // Determinar se o botão deve estar desabilitado
+  const isButtonDisabled = loading || error || !priceData;
+
+  // Texto do botão
+  const getButtonText = () => {
+    if (loading) return 'Carregando...';
+    if (error || !priceData) return 'Serviço Indisponível';
+    return 'Começar Teste Grátis';
+  };
 
   return (
     <div className="container mx-auto px-4 mb-20">
@@ -23,9 +40,14 @@ const PricingSection = () => {
             <div className="text-center">
               <h3 className="text-2xl font-bold mb-2 text-card-foreground">Plano Premium</h3>
               <div className="text-4xl font-bold text-primary mb-1">
-                {loading ? 'Carregando...' : (priceData?.formatted || 'R$ 29,90')}
+                {getDisplayPrice()}
               </div>
-              <div className="text-muted-foreground mb-6">/mês</div>
+              {!error && !loading && priceData && (
+                <div className="text-muted-foreground mb-6">/mês</div>
+              )}
+              {(error || !priceData) && !loading && (
+                <div className="text-muted-foreground mb-6">Temporariamente indisponível</div>
+              )}
               
               <div className="bg-primary/20 text-primary text-sm font-semibold py-2 px-4 rounded-full mb-6">
                 3 DIAS GRÁTIS INCLUSOS
@@ -50,11 +72,20 @@ const PricingSection = () => {
                 </li>
               </ul>
 
-              <Link to="/auth?mode=signup">
-                <Button className="w-full text-lg py-6 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold hover:from-primary/90 hover:to-accent/90">
-                  Começar Teste Grátis
+              {isButtonDisabled ? (
+                <Button 
+                  disabled 
+                  className="w-full text-lg py-6 bg-gray-400 text-gray-600 cursor-not-allowed"
+                >
+                  {getButtonText()}
                 </Button>
-              </Link>
+              ) : (
+                <Link to="/auth?mode=signup">
+                  <Button className="w-full text-lg py-6 bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold hover:from-primary/90 hover:to-accent/90">
+                    {getButtonText()}
+                  </Button>
+                </Link>
+              )}
             </div>
           </Card>
         </div>

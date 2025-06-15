@@ -29,28 +29,12 @@ export const useReceitas = () => {
       console.log('useReceitas: Iniciando busca de recebimentos...');
       
       try {
-        // Verificar se o usuário está autenticado
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        
-        if (authError) {
-          console.error('useReceitas: Erro de autenticação:', authError);
-          throw new Error(`Erro de autenticação: ${authError.message}`);
-        }
-        
-        if (!user) {
-          console.error('useReceitas: Usuário não autenticado');
-          throw new Error('Usuário não autenticado');
-        }
-        
-        console.log('useReceitas: Usuário autenticado:', user.id);
-        
         const { data, error: queryError } = await supabase
           .from('receitas')
           .select(`
             *,
             categoria:categorias(nome, cor)
           `)
-          .eq('user_id', user.id)
           .order('data_recebimento', { ascending: true });
 
         if (queryError) {
@@ -90,18 +74,9 @@ export const useReceitas = () => {
       console.log('useReceitas: Criando recebimento:', receita);
       
       try {
-        // Obter o usuário autenticado
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (!user || authError) {
-          throw new Error('Usuário não autenticado');
-        }
-
         const { data, error } = await supabase
           .from('receitas')
-          .insert([{
-            ...receita,
-            user_id: user.id
-          }])
+          .insert([receita])
           .select()
           .single();
 

@@ -5,10 +5,19 @@ import { useState } from "react";
 import TipoTooltip from "./TipoTooltip";
 import EditDespesaDialog from "../controle-contas/EditDespesaDialog";
 import DespesaGroup from "./DespesaGroup";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const ListaDespesas = () => {
-  const { despesas, isLoading, updateDespesa, deleteDespesa } = useDespesas();
+  const { despesas, isLoading, error, updateDespesa, deleteDespesa } = useDespesas();
   const [editingDespesa, setEditingDespesa] = useState<any>(null);
+
+  console.log('ListaDespesas: Renderizando com dados:', { 
+    despesasCount: despesas?.length || 0, 
+    isLoading, 
+    hasError: !!error,
+    errorMessage: error?.message
+  });
 
   const handlePagar = (id: string) => {
     updateDespesa.mutate({
@@ -25,6 +34,40 @@ const ListaDespesas = () => {
       data_pagamento: null
     });
   };
+
+  if (error) {
+    return (
+      <Card className="p-6">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-red-700 mb-2">Erro ao carregar despesas</h3>
+          <p className="text-sm text-red-600 mb-4">{error.message}</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline"
+            className="text-red-600 border-red-300 hover:bg-red-50"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Tentar novamente
+          </Button>
+        </div>
+      </Card>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <Card className="p-6">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-500" />
+          <div className="text-lg font-medium">Carregando despesas...</div>
+          <div className="text-sm text-muted-foreground mt-2">
+            Aguarde enquanto buscamos seus dados
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   // Agrupar despesas por descrição e categoria
   const groupedDespesas = despesas.reduce((groups, despesa) => {
@@ -49,14 +92,6 @@ const ListaDespesas = () => {
   );
 
   const totalDespesas = despesas.reduce((total, despesa) => total + despesa.valor, 0);
-
-  if (isLoading) {
-    return (
-      <Card className="p-6">
-        <div className="text-center">Carregando despesas...</div>
-      </Card>
-    );
-  }
 
   return (
     <>
