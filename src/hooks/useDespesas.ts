@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -31,30 +30,120 @@ export const useDespesas = () => {
   const { data: despesas = [], isLoading, error } = useQuery({
     queryKey: ['despesas'],
     queryFn: async () => {
-      console.log('Buscando despesas do banco de dados...');
-      const { data, error } = await supabase
-        .from('despesas')
-        .select(`
-          *,
-          categoria:categorias(nome, cor)
-        `)
-        .eq('is_modelo', false) // Filtrar apenas despesas que não são modelos
-        .order('data_vencimento', { ascending: true });
+      console.log('useDespesas: === INICIANDO BUSCA DETALHADA ===');
+      
+      try {
+        // Step 1: Verificar conexão básica
+        console.log('useDespesas: Step 1 - Testando conexão...');
+        const { data: testData, error: testError } = await supabase
+          .from('despesas')
+          .select('count(*)', { count: 'exact', head: true });
+        
+        console.log('useDespesas: Teste de conexão:', { testData, testError });
+        
+        if (testError) {
+          console.error('useDespesas: ERRO no teste de conexão:', testError);
+          throw new Error(`Erro de conexão: ${testError.message}`);
+        }
 
-      if (error) {
-        console.error('Erro ao buscar despesas:', error);
-        throw error;
+        // Step 2: Verificar autenticação
+        console.log('useDespesas: Step 2 - Verificando autenticação...');
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        console.log('useDespesas: Dados do usuário:', { 
+          userExists: !!user, 
+          userId: user?.id, 
+          userEmail: user?.email,
+          userError: userError?.message 
+        });
+        
+        if (userError) {
+          console.error('useDespesas: ERRO de autenticação:', userError);
+          throw new Error(`Erro de autenticação: ${userError.message}`);
+        }
+        
+        if (!user) {
+          console.error('useDespesas: Usuário não autenticado');
+          throw new Error('Usuário não autenticado - faça login novamente');
+        }
+
+        // Step 3: Buscar despesas
+        console.log('useDespesas: Step 3 - Buscando despesas...');
+        const { data, error: queryError, count } = await supabase
+          .from('despesas')
+          .select(`
+            *,
+            categoria:categorias(nome, cor)
+          `, { count: 'exact' })
+          .eq('user_id', user.id)
+          .eq('is_modelo', false)
+          .order('data_vencimento', { ascending: true });
+
+        console.log('useDespesas: Resultado da query:', { 
+          data: data, 
+          dataLength: data?.length || 0,
+          count: count,
+          error: queryError,
+          queryDetails: {
+            table: 'despesas',
+            userId: user.id,
+            isModelo: false,
+            orderBy: 'data_vencimento'
+          }
+        });
+
+        if (queryError) {
+          console.error('useDespesas: ERRO na query:', {
+            error: queryError,
+            code: queryError.code,
+            message: queryError.message,
+            details: queryError.details
+          });
+          
+          if (queryError.code === 'PGRST116' || queryError.message?.includes('RLS') || queryError.message?.includes('policy')) {
+            throw new Error('Erro de permissão: As políticas de segurança estão bloqueando o acesso aos dados.');
+          }
+          
+          throw new Error(`Erro ao buscar despesas: ${queryError.message}`);
+        }
+        
+        if (!data) {
+          console.warn('useDespesas: Query retornou null/undefined');
+          return [];
+        }
+
+        console.log('useDespesas: === BUSCA CONCLUÍDA ===', { total: data.length });
+        return data as Despesa[];
+        
+      } catch (err: any) {
+        console.error('useDespesas: === ERRO FATAL ===', err);
+        throw err;
       }
-      console.log('Despesas carregadas:', data);
-      return data as Despesa[];
-    }
+    },
+    retry: (failureCount, error: any) => {
+      console.log('useDespesas: Tentativa de retry:', { failureCount, errorMessage: error?.message });
+      if (error?.message?.includes('autenticação') || error?.message?.includes('permissão')) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+  });
+
+  console.log('useDespesas: === ESTADO ATUAL ===', { 
+    despesasCount: despesas?.length || 0, 
+    isLoading, 
+    hasError: !!error,
+    errorMessage: error?.message,
+    timestamp: new Date().toISOString()
   });
 
   // Query separada para buscar todas as despesas (incluindo modelos) - usado no ControleContas
   const { data: todasDespesas = [] } = useQuery({
     queryKey: ['todas-despesas'],
     queryFn: async () => {
-      console.log('Buscando todas as despesas (incluindo modelos)...');
+      console.log('useDespesas: Buscando todas as despesas (incluindo modelos)...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('Usuário não autenticado');
@@ -70,17 +159,17 @@ export const useDespesas = () => {
         .order('data_vencimento', { ascending: true });
 
       if (error) {
-        console.error('Erro ao buscar todas as despesas:', error);
+        console.error('useDespesas: Erro ao buscar todas as despesas:', error);
         throw error;
       }
-      console.log('Todas as despesas carregadas (incluindo modelos):', data);
+      console.log('useDespesas: Todas as despesas carregadas (incluindo modelos):', data);
       return data as Despesa[];
     }
   });
 
   const createDespesa = useMutation({
     mutationFn: async (despesa: Omit<Despesa, 'id' | 'categoria'>) => {
-      console.log('Criando despesa:', despesa);
+      console.log('useDespesas: Criando despesa:', despesa);
       
       // Obter o usuário autenticado
       const { data: { user } } = await supabase.auth.getUser();
@@ -100,10 +189,10 @@ export const useDespesas = () => {
         .single();
 
       if (error) {
-        console.error('Erro ao criar despesa:', error);
+        console.error('useDespesas: Erro ao criar despesa:', error);
         throw error;
       }
-      console.log('Despesa criada:', data);
+      console.log('useDespesas: Despesa criada:', data);
       return data;
     },
     onSuccess: (data, variables) => {
@@ -129,7 +218,7 @@ export const useDespesas = () => {
       }
     },
     onError: (error) => {
-      console.error('Erro na mutação de despesa:', error);
+      console.error('useDespesas: Erro na mutação de despesa:', error);
       toast({
         title: "Erro",
         description: "Erro ao cadastrar despesa",
@@ -140,7 +229,7 @@ export const useDespesas = () => {
 
   const generateDespesasFixas = useMutation({
     mutationFn: async (targetDate: Date) => {
-      console.log('Gerando despesas fixas para:', targetDate.toLocaleDateString('pt-BR'));
+      console.log('useDespesas: Gerando despesas fixas para:', targetDate.toLocaleDateString('pt-BR'));
       
       // Obter o usuário autenticado
       const { data: { user } } = await supabase.auth.getUser();
@@ -158,7 +247,7 @@ export const useDespesas = () => {
         .order('created_at', { ascending: true });
 
       if (fetchError) {
-        console.error('Erro ao buscar despesas fixas:', fetchError);
+        console.error('useDespesas: Erro ao buscar despesas fixas:', fetchError);
         throw fetchError;
       }
 
@@ -166,7 +255,7 @@ export const useDespesas = () => {
         throw new Error('Nenhuma despesa fixa modelo encontrada');
       }
 
-      console.log('Despesas fixas modelo encontradas:', todasDespesasFixas);
+      console.log('useDespesas: Despesas fixas modelo encontradas:', todasDespesasFixas);
 
       // Verificar se já existem despesas fixas para o mês selecionado
       const ano = targetDate.getFullYear();
@@ -175,7 +264,7 @@ export const useDespesas = () => {
       const ultimoDia = new Date(ano, mes, 0).getDate();
       const fimMesStr = `${ano}-${String(mes).padStart(2, '0')}-${String(ultimoDia).padStart(2, '0')}`;
 
-      console.log('Verificando despesas existentes entre:', inicioMesStr, 'e', fimMesStr);
+      console.log('useDespesas: Verificando despesas existentes entre:', inicioMesStr, 'e', fimMesStr);
 
       const { data: despesasExistentes, error: checkError } = await supabase
         .from('despesas')
@@ -187,11 +276,11 @@ export const useDespesas = () => {
         .lte('data_vencimento', fimMesStr);
 
       if (checkError) {
-        console.error('Erro ao verificar despesas existentes:', checkError);
+        console.error('useDespesas: Erro ao verificar despesas existentes:', checkError);
         throw checkError;
       }
 
-      console.log('Despesas fixas existentes no mês:', despesasExistentes);
+      console.log('useDespesas: Despesas fixas existentes no mês:', despesasExistentes);
 
       // Verificar quais modelos ainda não foram gerados para este mês
       let despesasJaExistentes = 0;
@@ -205,10 +294,10 @@ export const useDespesas = () => {
 
         if (jaExiste) {
           despesasJaExistentes++;
-          console.log(`Despesa ${modelo.descricao} já existe para este mês`);
+          console.log(`useDespesas: Despesa ${modelo.descricao} já existe para este mês`);
         } else {
           despesasParaGerar.push(modelo);
-          console.log(`Despesa ${modelo.descricao} será gerada para este mês`);
+          console.log(`useDespesas: Despesa ${modelo.descricao} será gerada para este mês`);
         }
       }
 
@@ -223,7 +312,7 @@ export const useDespesas = () => {
         const partesData = modelo.data_vencimento.split('-');
         const diaVencimento = parseInt(partesData[2], 10);
         
-        console.log(`Modelo original: ${modelo.data_vencimento}, Dia extraído: ${diaVencimento}`);
+        console.log(`useDespesas: Modelo original: ${modelo.data_vencimento}, Dia extraído: ${diaVencimento}`);
         
         // Verificar se o dia existe no mês alvo
         const ultimoDiaDoMes = new Date(ano, mes, 0).getDate();
@@ -232,7 +321,7 @@ export const useDespesas = () => {
         // Formatar a data manualmente para garantir precisão
         const dataVencimentoFormatada = `${ano}-${String(mes).padStart(2, '0')}-${String(diaFinal).padStart(2, '0')}`;
 
-        console.log(`Criando despesa ${modelo.descricao} para ${dataVencimentoFormatada} (dia original: ${diaVencimento}, dia final: ${diaFinal})`);
+        console.log(`useDespesas: Criando despesa ${modelo.descricao} para ${dataVencimentoFormatada} (dia original: ${diaVencimento}, dia final: ${diaFinal})`);
 
         const { data, error } = await supabase
           .from('despesas')
@@ -251,7 +340,7 @@ export const useDespesas = () => {
           .single();
 
         if (error) {
-          console.error('Erro ao criar despesa fixa:', error);
+          console.error('useDespesas: Erro ao criar despesa fixa:', error);
           throw error;
         }
 
@@ -259,7 +348,7 @@ export const useDespesas = () => {
       });
 
       const results = await Promise.all(promises);
-      console.log(`${results.length} despesas fixas geradas`);
+      console.log(`useDespesas: ${results.length} despesas fixas geradas`);
       return results;
     },
     onSuccess: (createdDespesas) => {
@@ -271,7 +360,7 @@ export const useDespesas = () => {
       });
     },
     onError: (error: any) => {
-      console.error('Erro ao gerar despesas fixas:', error);
+      console.error('useDespesas: Erro ao gerar despesas fixas:', error);
       toast({
         title: "Informação",
         description: error.message || "Erro ao gerar despesas fixas",
@@ -282,7 +371,7 @@ export const useDespesas = () => {
 
   const updateDespesa = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Despesa> & { id: string }) => {
-      console.log('Atualizando despesa:', id, updates);
+      console.log('useDespesas: Atualizando despesa:', id, updates);
       const { data, error } = await supabase
         .from('despesas')
         .update(updates)
@@ -291,10 +380,10 @@ export const useDespesas = () => {
         .single();
 
       if (error) {
-        console.error('Erro ao atualizar despesa:', error);
+        console.error('useDespesas: Erro ao atualizar despesa:', error);
         throw error;
       }
-      console.log('Despesa atualizada:', data);
+      console.log('useDespesas: Despesa atualizada:', data);
       return data;
     },
     onSuccess: () => {
@@ -305,17 +394,17 @@ export const useDespesas = () => {
 
   const deleteDespesa = useMutation({
     mutationFn: async (id: string) => {
-      console.log('Deletando despesa:', id);
+      console.log('useDespesas: Deletando despesa:', id);
       const { error } = await supabase
         .from('despesas')
         .delete()
         .eq('id', id);
 
       if (error) {
-        console.error('Erro ao deletar despesa:', error);
+        console.error('useDespesas: Erro ao deletar despesa:', error);
         throw error;
       }
-      console.log('Despesa deletada com sucesso');
+      console.log('useDespesas: Despesa deletada com sucesso');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['despesas'] });

@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -26,83 +25,172 @@ export const useReceitas = () => {
   const { data: receitas = [], isLoading, error } = useQuery({
     queryKey: ['receitas'],
     queryFn: async () => {
-      console.log('useReceitas: Iniciando busca de recebimentos...');
+      console.log('useReceitas: === INICIANDO BUSCA DETALHADA ===');
       
       try {
-        // Verificar se o usuário está autenticado
+        // Step 1: Verificar conexão básica com Supabase
+        console.log('useReceitas: Step 1 - Testando conexão com Supabase...');
+        const { data: testData, error: testError } = await supabase
+          .from('receitas')
+          .select('count(*)', { count: 'exact', head: true });
+        
+        console.log('useReceitas: Teste de conexão:', { testData, testError });
+        
+        if (testError) {
+          console.error('useReceitas: ERRO no teste de conexão:', testError);
+          throw new Error(`Erro de conexão: ${testError.message}`);
+        }
+
+        // Step 2: Verificar autenticação
+        console.log('useReceitas: Step 2 - Verificando autenticação...');
         const { data: { user }, error: userError } = await supabase.auth.getUser();
-        console.log('useReceitas: Usuário autenticado:', user?.email || 'Nenhum usuário');
+        console.log('useReceitas: Dados do usuário:', { 
+          userExists: !!user, 
+          userId: user?.id, 
+          userEmail: user?.email,
+          userError: userError?.message 
+        });
         
         if (userError) {
-          console.error('useReceitas: Erro ao verificar usuário:', userError);
+          console.error('useReceitas: ERRO de autenticação:', userError);
           throw new Error(`Erro de autenticação: ${userError.message}`);
         }
         
         if (!user) {
           console.error('useReceitas: Usuário não autenticado');
-          throw new Error('Usuário não autenticado');
+          throw new Error('Usuário não autenticado - faça login novamente');
         }
 
-        console.log('useReceitas: Fazendo query para a tabela receitas...');
+        // Step 3: Buscar receitas com logs detalhados
+        console.log('useReceitas: Step 3 - Buscando receitas...');
+        console.log('useReceitas: Query SQL que será executada:', `
+          SELECT receitas.*, categorias.nome as categoria_nome, categorias.cor as categoria_cor
+          FROM receitas
+          LEFT JOIN categorias ON receitas.categoria_id = categorias.id
+          WHERE receitas.user_id = '${user.id}'
+          ORDER BY receitas.data_recebimento ASC
+        `);
         
-        const { data, error: queryError } = await supabase
+        const { data, error: queryError, count } = await supabase
           .from('receitas')
           .select(`
             *,
             categoria:categorias(nome, cor)
-          `)
+          `, { count: 'exact' })
+          .eq('user_id', user.id)
           .order('data_recebimento', { ascending: true });
 
-        console.log('useReceitas: Resposta da query:', { 
-          data: data?.length || 0, 
+        console.log('useReceitas: Resultado da query:', { 
+          data: data, 
+          dataLength: data?.length || 0,
+          count: count,
           error: queryError,
-          firstItem: data?.[0] || null 
+          queryDetails: {
+            table: 'receitas',
+            userId: user.id,
+            hasJoin: true,
+            orderBy: 'data_recebimento'
+          }
         });
 
         if (queryError) {
-          console.error('useReceitas: Erro ao buscar recebimentos:', queryError);
+          console.error('useReceitas: ERRO na query principal:', {
+            error: queryError,
+            code: queryError.code,
+            message: queryError.message,
+            details: queryError.details,
+            hint: queryError.hint
+          });
           
           // Verificar se é erro de RLS
-          if (queryError.code === 'PGRST116' || queryError.message?.includes('RLS')) {
-            console.error('useReceitas: Erro de RLS detectado - verifique as políticas de segurança');
-            throw new Error('Erro de permissão: Verifique se as políticas RLS estão configuradas corretamente');
+          if (queryError.code === 'PGRST116' || queryError.message?.includes('RLS') || queryError.message?.includes('policy')) {
+            console.error('useReceitas: ERRO DE RLS - Políticas de segurança bloqueando acesso');
+            throw new Error('Erro de permissão: As políticas de segurança estão bloqueando o acesso aos dados. Verifique as configurações RLS no Supabase.');
           }
           
-          throw new Error(`Erro ao buscar recebimentos: ${queryError.message}`);
+          // Verificar se é erro de tabela não encontrada
+          if (queryError.code === 'PGRST106' || queryError.message?.includes('relation') || queryError.message?.includes('does not exist')) {
+            console.error('useReceitas: ERRO DE TABELA - Tabela receitas não encontrada');
+            throw new Error('Erro de estrutura: A tabela de receitas não foi encontrada no banco de dados.');
+          }
+          
+          throw new Error(`Erro ao buscar receitas: ${queryError.message}`);
         }
         
-        console.log('useReceitas: Recebimentos carregados com sucesso:', data?.length || 0, 'items');
-        console.log('useReceitas: Dados recebidos:', data);
+        // Step 4: Verificar se retornou dados
+        if (!data) {
+          console.warn('useReceitas: Query retornou null/undefined');
+          return [];
+        }
+
+        if (data.length === 0) {
+          console.log('useReceitas: Nenhuma receita encontrada para o usuário');
+        } else {
+          console.log('useReceitas: Receitas encontradas:', {
+            total: data.length,
+            primeirasReceitas: data.slice(0, 3).map(r => ({
+              id: r.id,
+              descricao: r.descricao,
+              valor: r.valor,
+              categoria: r.categoria?.nome || 'Sem categoria'
+            }))
+          });
+        }
         
+        console.log('useReceitas: === BUSCA CONCLUÍDA COM SUCESSO ===');
         return (data as Receita[]) || [];
         
-      } catch (err) {
-        console.error('useReceitas: Erro na função de busca:', err);
+      } catch (err: any) {
+        console.error('useReceitas: === ERRO FATAL NA BUSCA ===');
+        console.error('useReceitas: Detalhes do erro:', {
+          name: err.name,
+          message: err.message,
+          stack: err.stack,
+          cause: err.cause
+        });
         throw err;
       }
     },
-    retry: 3,
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retry: (failureCount, error: any) => {
+      console.log('useReceitas: Tentativa de retry:', { failureCount, errorMessage: error?.message });
+      // Não retry em erros de autenticação ou RLS
+      if (error?.message?.includes('autenticação') || error?.message?.includes('RLS') || error?.message?.includes('política')) {
+        console.log('useReceitas: Não fazendo retry para erro de autenticação/RLS');
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: attemptIndex => {
+      const delay = Math.min(1000 * 2 ** attemptIndex, 30000);
+      console.log('useReceitas: Aguardando retry em:', delay, 'ms');
+      return delay;
+    },
     staleTime: 5 * 60 * 1000, // 5 minutos
     gcTime: 10 * 60 * 1000, // 10 minutos
   });
 
-  // Log de erro se houver
-  if (error) {
-    console.error('useReceitas: Erro na query:', error);
-  }
-
-  // Log do estado atual sempre que houver mudança
-  console.log('useReceitas: Estado atual:', { 
+  // Log detalhado do estado sempre que houver mudança
+  console.log('useReceitas: === ESTADO ATUAL DO HOOK ===', { 
     receitasCount: receitas?.length || 0, 
     isLoading, 
     hasError: !!error,
-    errorMessage: error?.message
+    errorMessage: error?.message,
+    timestamp: new Date().toISOString()
   });
+
+  // Log de erro detalhado se houver
+  if (error) {
+    console.error('useReceitas: === ERRO NO HOOK ===', {
+      error: error,
+      errorName: error.name,
+      errorMessage: error.message,
+      errorStack: error.stack
+    });
+  }
 
   const createReceita = useMutation({
     mutationFn: async (receita: Omit<Receita, 'id' | 'categoria'>) => {
-      console.log('useReceitas: Criando recebimento:', receita);
+      console.log('useReceitas: Criando receita:', receita);
       
       try {
         // Obter o usuário autenticado
@@ -123,11 +211,11 @@ export const useReceitas = () => {
           .single();
 
         if (error) {
-          console.error('useReceitas: Erro ao criar recebimento:', error);
-          throw new Error(`Erro ao criar recebimento: ${error.message}`);
+          console.error('useReceitas: Erro ao criar receita:', error);
+          throw new Error(`Erro ao criar receita: ${error.message}`);
         }
         
-        console.log('useReceitas: Recebimento criado com sucesso:', data);
+        console.log('useReceitas: Receita criada com sucesso:', data);
         return data;
       } catch (err) {
         console.error('useReceitas: Erro na criação:', err);
@@ -138,14 +226,14 @@ export const useReceitas = () => {
       queryClient.invalidateQueries({ queryKey: ['receitas'] });
       toast({
         title: "Sucesso",
-        description: "Recebimento cadastrado com sucesso!"
+        description: "Receita cadastrada com sucesso!"
       });
     },
     onError: (error: any) => {
-      console.error('useReceitas: Erro na mutação de recebimento:', error);
+      console.error('useReceitas: Erro na mutação de receita:', error);
       toast({
         title: "Erro",
-        description: error.message || "Erro ao cadastrar recebimento",
+        description: error.message || "Erro ao cadastrar receita",
         variant: "destructive"
       });
     }
@@ -153,7 +241,7 @@ export const useReceitas = () => {
 
   const updateReceita = useMutation({
     mutationFn: async ({ id, ...updates }: Partial<Receita> & { id: string }) => {
-      console.log('useReceitas: Atualizando recebimento:', id, updates);
+      console.log('useReceitas: Atualizando receita:', id, updates);
       
       try {
         const { data, error } = await supabase
@@ -164,11 +252,11 @@ export const useReceitas = () => {
           .single();
 
         if (error) {
-          console.error('useReceitas: Erro ao atualizar recebimento:', error);
-          throw new Error(`Erro ao atualizar recebimento: ${error.message}`);
+          console.error('useReceitas: Erro ao atualizar receita:', error);
+          throw new Error(`Erro ao atualizar receita: ${error.message}`);
         }
         
-        console.log('useReceitas: Recebimento atualizado com sucesso:', data);
+        console.log('useReceitas: Receita atualizada com sucesso:', data);
         return data;
       } catch (err) {
         console.error('useReceitas: Erro na atualização:', err);
@@ -179,14 +267,14 @@ export const useReceitas = () => {
       queryClient.invalidateQueries({ queryKey: ['receitas'] });
       toast({
         title: "Sucesso",
-        description: "Recebimento atualizado com sucesso!"
+        description: "Receita atualizada com sucesso!"
       });
     },
     onError: (error: any) => {
       console.error('useReceitas: Erro na atualização:', error);
       toast({
         title: "Erro",
-        description: error.message || "Erro ao atualizar recebimento",
+        description: error.message || "Erro ao atualizar receita",
         variant: "destructive"
       });
     }
@@ -194,7 +282,7 @@ export const useReceitas = () => {
 
   const deleteReceita = useMutation({
     mutationFn: async (id: string) => {
-      console.log('useReceitas: Deletando recebimento:', id);
+      console.log('useReceitas: Deletando receita:', id);
       
       try {
         const { error } = await supabase
@@ -203,11 +291,11 @@ export const useReceitas = () => {
           .eq('id', id);
 
         if (error) {
-          console.error('useReceitas: Erro ao deletar recebimento:', error);
-          throw new Error(`Erro ao deletar recebimento: ${error.message}`);
+          console.error('useReceitas: Erro ao deletar receita:', error);
+          throw new Error(`Erro ao deletar receita: ${error.message}`);
         }
         
-        console.log('useReceitas: Recebimento deletado com sucesso');
+        console.log('useReceitas: Receita deletada com sucesso');
       } catch (err) {
         console.error('useReceitas: Erro na deleção:', err);
         throw err;
@@ -217,14 +305,14 @@ export const useReceitas = () => {
       queryClient.invalidateQueries({ queryKey: ['receitas'] });
       toast({
         title: "Sucesso",
-        description: "Recebimento removido com sucesso!"
+        description: "Receita removida com sucesso!"
       });
     },
     onError: (error: any) => {
       console.error('useReceitas: Erro na deleção:', error);
       toast({
         title: "Erro",
-        description: error.message || "Erro ao remover recebimento",
+        description: error.message || "Erro ao remover receita",
         variant: "destructive"
       });
     }
