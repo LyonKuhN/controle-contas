@@ -11,7 +11,10 @@ const ListaReceitas = () => {
   const { receitas, isLoading, updateReceita, deleteReceita } = useReceitas();
   const [editingReceita, setEditingReceita] = useState<any>(null);
 
+  console.log('ListaReceitas: Dados carregados:', { receitas, isLoading });
+
   const handleReceber = (id: string) => {
+    console.log('Marcando como recebido:', id);
     updateReceita.mutate({
       id,
       recebido: true
@@ -19,6 +22,7 @@ const ListaReceitas = () => {
   };
 
   const desfazerRecebimento = (id: string) => {
+    console.log('Desfazendo recebimento:', id);
     updateReceita.mutate({
       id,
       recebido: false
