@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -31,62 +32,69 @@ export const useDespesas = () => {
     queryFn: async () => {
       console.log('🔍 useDespesas: Iniciando busca de despesas...');
       
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      
-      if (userError) {
-        console.error('❌ useDespesas: Erro de autenticação:', userError);
-        throw new Error(`Erro de autenticação: ${userError.message}`);
+      try {
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        
+        if (userError) {
+          console.error('❌ useDespesas: Erro de autenticação:', userError);
+          throw new Error(`Erro de autenticação: ${userError.message}`);
+        }
+        
+        if (!user) {
+          console.error('❌ useDespesas: Usuário não autenticado');
+          throw new Error('Usuário não autenticado');
+        }
+
+        console.log('✅ useDespesas: Usuário autenticado:', user.email);
+
+        const { data, error: queryError } = await supabase
+          .from('despesas')
+          .select(`
+            id,
+            descricao,
+            valor,
+            categoria_id,
+            data_vencimento,
+            pago,
+            data_pagamento,
+            observacoes,
+            tipo,
+            numero_parcelas,
+            valor_total,
+            parcela_atual,
+            is_modelo,
+            categoria:categorias(nome, cor)
+          `)
+          .eq('user_id', user.id)
+          .eq('is_modelo', false)
+          .order('data_vencimento', { ascending: true });
+
+        console.log('📊 useDespesas: Resposta completa da API:', { data, error: queryError });
+
+        if (queryError) {
+          console.error('❌ useDespesas: Erro na query:', queryError);
+          throw new Error(`Erro ao buscar despesas: ${queryError.message}`);
+        }
+        
+        const result = (data as Despesa[]) || [];
+        console.log('✅ useDespesas: Despesas carregadas com sucesso:', result.length, 'itens');
+        return result;
+      } catch (error) {
+        console.error('❌ useDespesas: Erro geral:', error);
+        throw error;
       }
-      
-      if (!user) {
-        console.error('❌ useDespesas: Usuário não autenticado');
-        throw new Error('Usuário não autenticado');
-      }
-
-      console.log('✅ useDespesas: Usuário autenticado:', user.email);
-
-      const { data, error: queryError } = await supabase
-        .from('despesas')
-        .select(`
-          id,
-          descricao,
-          valor,
-          categoria_id,
-          data_vencimento,
-          pago,
-          data_pagamento,
-          observacoes,
-          tipo,
-          numero_parcelas,
-          valor_total,
-          parcela_atual,
-          is_modelo,
-          categoria:categorias(nome, cor)
-        `)
-        .eq('user_id', user.id)
-        .eq('is_modelo', false)
-        .order('data_vencimento', { ascending: true });
-
-      console.log('📊 useDespesas: Resposta da API:', { data, error: queryError });
-
-      if (queryError) {
-        console.error('❌ useDespesas: Erro na query:', queryError);
-        throw new Error(`Erro ao buscar despesas: ${queryError.message}`);
-      }
-      
-      const result = (data as Despesa[]) || [];
-      console.log('✅ useDespesas: Despesas carregadas:', result.length);
-      return result;
     },
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    enabled: true,
+    retry: 1,
+    retryDelay: 1000,
+    staleTime: 30000, // 30 segundos
+    gcTime: 300000, // 5 minutos
     refetchOnWindowFocus: false,
-    refetchOnMount: true,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
-  console.log('📈 useDespesas: Estado atual:', { 
+  console.log('📈 useDespesas: Estado final:', { 
     despesasCount: despesas?.length || 0, 
     isLoading, 
     hasError: !!error,
@@ -115,7 +123,8 @@ export const useDespesas = () => {
       }
       return data as Despesa[];
     },
-    staleTime: 5 * 60 * 1000,
+    enabled: !!despesas, // Só executa depois que despesas foi carregada
+    staleTime: 30000,
     refetchOnWindowFocus: false,
   });
 
