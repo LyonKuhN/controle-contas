@@ -26,79 +26,57 @@ export const useReceitas = () => {
   const { data: receitas = [], isLoading, error } = useQuery({
     queryKey: ['receitas'],
     queryFn: async () => {
-      console.log('🔍 === INÍCIO DA BUSCA RECEITAS ===');
+      console.log('🔍 useReceitas: Iniciando busca de receitas...');
       
-      try {
-        console.log('🔍 Step 1: Verificando autenticação...');
-        const authStart = performance.now();
-        
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        const authEnd = performance.now();
-        console.log(`🔍 Step 1 completo em ${authEnd - authStart}ms`);
-        
-        if (userError) {
-          console.error('❌ Erro de autenticação receitas:', userError);
-          throw new Error(`Erro de autenticação: ${userError.message}`);
-        }
-        
-        if (!user) {
-          console.error('❌ Usuário não autenticado para receitas');
-          throw new Error('Usuário não autenticado');
-        }
-
-        console.log('✅ Usuário autenticado para receitas:', user.email);
-
-        console.log('🔍 Step 2: Executando query receitas...');
-        const queryStart = performance.now();
-
-        const { data, error: queryError, status } = await supabase
-          .from('receitas')
-          .select(`
-            id,
-            descricao,
-            valor,
-            categoria_id,
-            data_recebimento,
-            recebido,
-            observacoes,
-            categoria:categorias(nome, cor)
-          `)
-          .eq('user_id', user.id)
-          .order('data_recebimento', { ascending: true });
-
-        const queryEnd = performance.now();
-        console.log(`🔍 Step 2 receitas completo em ${queryEnd - queryStart}ms`);
-
-        console.log('📊 Resposta da API receitas:', {
-          status,
-          data,
-          dataLength: data?.length || 0,
-          error: queryError
-        });
-
-        if (queryError) {
-          console.error('❌ Erro na query receitas:', queryError);
-          throw new Error(`Erro ao buscar receitas: ${queryError.message}`);
-        }
-        
-        const result = (data as Receita[]) || [];
-        console.log('✅ Receitas carregadas:', result.length);
-        return result;
-        
-      } catch (err: any) {
-        console.error('💥 === ERRO FATAL RECEITAS ===', err);
-        throw err;
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('❌ useReceitas: Erro de autenticação:', userError);
+        throw new Error(`Erro de autenticação: ${userError.message}`);
       }
+      
+      if (!user) {
+        console.error('❌ useReceitas: Usuário não autenticado');
+        throw new Error('Usuário não autenticado');
+      }
+
+      console.log('✅ useReceitas: Usuário autenticado:', user.email);
+
+      const { data, error: queryError } = await supabase
+        .from('receitas')
+        .select(`
+          id,
+          descricao,
+          valor,
+          categoria_id,
+          data_recebimento,
+          recebido,
+          observacoes,
+          categoria:categorias(nome, cor)
+        `)
+        .eq('user_id', user.id)
+        .order('data_recebimento', { ascending: true });
+
+      console.log('📊 useReceitas: Resposta da API:', { data, error: queryError });
+
+      if (queryError) {
+        console.error('❌ useReceitas: Erro na query:', queryError);
+        throw new Error(`Erro ao buscar receitas: ${queryError.message}`);
+      }
+      
+      const result = (data as Receita[]) || [];
+      console.log('✅ useReceitas: Receitas carregadas:', result.length);
+      return result;
     },
-    retry: 1,
-    retryDelay: 1000,
-    staleTime: 0,
-    gcTime: 5 * 60 * 1000,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
     refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
 
-  console.log('📈 Estado receitas:', { 
+  console.log('📈 useReceitas: Estado atual:', { 
     receitasCount: receitas?.length || 0, 
     isLoading, 
     hasError: !!error,

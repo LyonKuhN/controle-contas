@@ -29,86 +29,64 @@ export const useDespesas = () => {
   const { data: despesas = [], isLoading, error } = useQuery({
     queryKey: ['despesas'],
     queryFn: async () => {
-      console.log('🔍 === INÍCIO DA BUSCA DESPESAS ===');
+      console.log('🔍 useDespesas: Iniciando busca de despesas...');
       
-      try {
-        console.log('🔍 Step 1: Verificando autenticação...');
-        const authStart = performance.now();
-        
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        const authEnd = performance.now();
-        console.log(`🔍 Step 1 completo em ${authEnd - authStart}ms`);
-        
-        if (userError) {
-          console.error('❌ Erro de autenticação despesas:', userError);
-          throw new Error(`Erro de autenticação: ${userError.message}`);
-        }
-        
-        if (!user) {
-          console.error('❌ Usuário não autenticado para despesas');
-          throw new Error('Usuário não autenticado');
-        }
-
-        console.log('✅ Usuário autenticado para despesas:', user.email);
-
-        console.log('🔍 Step 2: Executando query despesas...');
-        const queryStart = performance.now();
-
-        const { data, error: queryError, status } = await supabase
-          .from('despesas')
-          .select(`
-            id,
-            descricao,
-            valor,
-            categoria_id,
-            data_vencimento,
-            pago,
-            data_pagamento,
-            observacoes,
-            tipo,
-            numero_parcelas,
-            valor_total,
-            parcela_atual,
-            is_modelo,
-            categoria:categorias(nome, cor)
-          `)
-          .eq('user_id', user.id)
-          .eq('is_modelo', false)
-          .order('data_vencimento', { ascending: true });
-
-        const queryEnd = performance.now();
-        console.log(`🔍 Step 2 despesas completo em ${queryEnd - queryStart}ms`);
-
-        console.log('📊 Resposta da API despesas:', {
-          status,
-          data,
-          dataLength: data?.length || 0,
-          error: queryError
-        });
-
-        if (queryError) {
-          console.error('❌ Erro na query despesas:', queryError);
-          throw new Error(`Erro ao buscar despesas: ${queryError.message}`);
-        }
-        
-        const result = (data as Despesa[]) || [];
-        console.log('✅ Despesas carregadas:', result.length);
-        return result;
-        
-      } catch (err: any) {
-        console.error('💥 === ERRO FATAL DESPESAS ===', err);
-        throw err;
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError) {
+        console.error('❌ useDespesas: Erro de autenticação:', userError);
+        throw new Error(`Erro de autenticação: ${userError.message}`);
       }
+      
+      if (!user) {
+        console.error('❌ useDespesas: Usuário não autenticado');
+        throw new Error('Usuário não autenticado');
+      }
+
+      console.log('✅ useDespesas: Usuário autenticado:', user.email);
+
+      const { data, error: queryError } = await supabase
+        .from('despesas')
+        .select(`
+          id,
+          descricao,
+          valor,
+          categoria_id,
+          data_vencimento,
+          pago,
+          data_pagamento,
+          observacoes,
+          tipo,
+          numero_parcelas,
+          valor_total,
+          parcela_atual,
+          is_modelo,
+          categoria:categorias(nome, cor)
+        `)
+        .eq('user_id', user.id)
+        .eq('is_modelo', false)
+        .order('data_vencimento', { ascending: true });
+
+      console.log('📊 useDespesas: Resposta da API:', { data, error: queryError });
+
+      if (queryError) {
+        console.error('❌ useDespesas: Erro na query:', queryError);
+        throw new Error(`Erro ao buscar despesas: ${queryError.message}`);
+      }
+      
+      const result = (data as Despesa[]) || [];
+      console.log('✅ useDespesas: Despesas carregadas:', result.length);
+      return result;
     },
-    retry: 1,
-    retryDelay: 1000,
-    staleTime: 0,
-    gcTime: 5 * 60 * 1000,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
     refetchOnWindowFocus: false,
+    refetchOnMount: true,
   });
 
-  console.log('📈 Estado despesas:', { 
+  console.log('📈 useDespesas: Estado atual:', { 
     despesasCount: despesas?.length || 0, 
     isLoading, 
     hasError: !!error,
@@ -136,7 +114,9 @@ export const useDespesas = () => {
         throw error;
       }
       return data as Despesa[];
-    }
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
   const createDespesa = useMutation({
