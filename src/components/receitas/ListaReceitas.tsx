@@ -30,7 +30,7 @@ const ListaReceitas = () => {
   if (isLoading) {
     return (
       <Card className="p-6">
-        <div className="text-center">Carregando receitas...</div>
+        <div className="text-center">Carregando recebimentos...</div>
       </Card>
     );
   }
@@ -39,7 +39,7 @@ const ListaReceitas = () => {
     <>
       <Card className="p-6">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Receitas Cadastradas</h2>
+          <h2 className="text-2xl font-bold">Recebimentos Cadastrados</h2>
           <div className="text-right">
             <p className="text-sm text-muted-foreground">Total</p>
             <p className="text-xl font-bold text-green-600">
@@ -126,7 +126,7 @@ const ListaReceitas = () => {
 
           {receitas.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-muted-foreground">Nenhuma receita cadastrada ainda.</p>
+              <p className="text-muted-foreground">Nenhum recebimento cadastrado ainda.</p>
             </div>
           )}
         </div>

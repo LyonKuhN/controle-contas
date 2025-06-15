@@ -8,7 +8,7 @@ const NavigationIsland = () => {
   const navItems = [
     { icon: Home, label: 'Dashboard', path: '/dashboard' },
     { icon: TrendingDown, label: 'Despesas', path: '/despesas' },
-    { icon: TrendingUp, label: 'Receitas', path: '/receitas' },
+    { icon: TrendingUp, label: 'Recebimentos', path: '/receitas' },
     { icon: FileText, label: 'Contas', path: '/controle-contas' },
   ];
 

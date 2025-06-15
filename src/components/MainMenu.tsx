@@ -24,7 +24,7 @@ const menuItems = [
     path: "/despesas"
   },
   {
-    title: "Receitas",
+    title: "Recebimentos",
     description: "Controle todas as suas fontes de renda",
     icon: "💰",
     path: "/receitas"
