@@ -15,19 +15,19 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 const menuItems = [
   {
     title: "Despesas",
-    description: "Registre e categorize todos os seus gastos mensais",
+    description: "Registre e categorize todos os seus gastos mensais, controle orçamento familiar, organize despesas fixas e variáveis",
     icon: "💸",
     path: "/despesas"
   },
   {
-    title: "Receitas",
-    description: "Controle todas as suas fontes de renda",
+    title: "Recebimentos",
+    description: "Controle todas as suas fontes de renda, salários, freelances, receitas extras e rendimentos",
     icon: "💰",
     path: "/receitas"
   },
   {
     title: "Controle de Contas",
-    description: "Gerencie suas contas e acompanhe pagamentos",
+    description: "Gerencie suas contas a pagar e receber, acompanhe vencimentos e organize seu fluxo de caixa",
     icon: "📋",
     path: "/controle-contas"
   }
@@ -82,7 +82,7 @@ const Index = () => {
           <div className="flex items-center justify-center gap-4 mb-6">
             <img 
               src="/lovable-uploads/4fec2beb-6c7e-4cea-a53b-51b0335866ca.png" 
-              alt="Logo"
+              alt="LYONPAY - Sistema de Controle Financeiro Pessoal"
               className="w-16 h-16 object-contain"
             />
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
@@ -90,8 +90,17 @@ const Index = () => {
             </h1>
           </div>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Gerencie suas finanças pessoais de forma simples e eficiente
+            Sistema completo de controle financeiro pessoal - Gerencie despesas, recebimentos, orçamento familiar e fluxo de caixa de forma simples e eficiente
           </p>
+          
+          {/* SEO Keywords (hidden) */}
+          <div className="sr-only">
+            controle financeiro pessoal, gestão de despesas, orçamento familiar, 
+            planejamento financeiro, controle de gastos, finanças pessoais, 
+            organização financeira, controle de contas, fluxo de caixa pessoal,
+            gerenciamento de receitas, despesas mensais, economia doméstica,
+            controle orçamentário, planilha financeira, aplicativo financeiro
+          </div>
         </div>
 
         {/* Trial Status Card */}
@@ -141,7 +150,7 @@ const Index = () => {
             <Card className="p-6 bg-gradient-to-r from-green-500/10 to-green-600/10 border-green-200">
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-green-700">💰 Receitas</h3>
+                  <h3 className="text-lg font-semibold text-green-700">💰 Recebimentos</h3>
                   <div className="flex items-center gap-1">
                     {getChangeIcon(data.changes.receitas)}
                     <span className={`text-xs font-medium ${getChangeColor(data.changes.receitas)}`}>

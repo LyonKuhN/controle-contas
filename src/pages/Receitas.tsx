@@ -20,7 +20,14 @@ const Receitas = () => {
       <div className="container mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4">💰 Recebimentos</h1>
-          <p className="text-muted-foreground">Controle todas as suas fontes de renda</p>
+          <p className="text-muted-foreground">Controle todas as suas fontes de renda, salários, freelances e receitas extras</p>
+          
+          {/* SEO Keywords (hidden) */}
+          <div className="sr-only">
+            controle de recebimentos, gestão de receitas, renda mensal, 
+            salário, freelances, receitas extras, fontes de renda,
+            controle de entradas, dinheiro recebido, pagamentos recebidos
+          </div>
         </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

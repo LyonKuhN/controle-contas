@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { Edit2, Trash2, CalendarDays, DollarSign } from 'lucide-react';
+import { Edit2, Trash2, CalendarDays, DollarSign, AlertCircle, RefreshCw } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useReceitas } from '@/hooks/useReceitas';
@@ -35,35 +35,37 @@ const ListaReceitas = () => {
     }
   };
 
-  if (isLoading) {
-    console.log('ListaReceitas: Mostrando skeleton de carregamento');
+  if (error) {
     return (
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold mb-4">Recebimentos Cadastrados</h2>
-        {[1, 2, 3].map((i) => (
-          <Card key={i} className="p-4">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-3/4" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-4 w-1/4" />
-            </div>
-          </Card>
-        ))}
-      </div>
+      <Card className="p-6">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-red-700 mb-2">Erro ao carregar recebimentos</h3>
+          <p className="text-sm text-red-600 mb-4">{error.message}</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            variant="outline"
+            className="text-red-600 border-red-300 hover:bg-red-50"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Tentar novamente
+          </Button>
+        </div>
+      </Card>
     );
   }
 
-  if (error) {
-    console.error('ListaReceitas: Mostrando erro:', error);
+  if (isLoading) {
     return (
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold mb-4">Recebimentos Cadastrados</h2>
-        <Alert variant="destructive">
-          <AlertDescription>
-            Erro ao carregar recebimentos: {error.message}
-          </AlertDescription>
-        </Alert>
-      </div>
+      <Card className="p-6">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-500" />
+          <div className="text-lg font-medium">Carregando recebimentos...</div>
+          <div className="text-sm text-muted-foreground mt-2">
+            Aguarde enquanto buscamos seus dados
+          </div>
+        </div>
+      </Card>
     );
   }
 

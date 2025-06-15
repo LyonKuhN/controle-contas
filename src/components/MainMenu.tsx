@@ -13,25 +13,25 @@ import { useIsMobile } from "@/hooks/use-mobile";
 const menuItems = [
   {
     title: "Dashboard",
-    description: "Acompanhe seus gastos e receitas com gráficos detalhados",
+    description: "Acompanhe seus gastos e receitas com gráficos detalhados e análises financeiras",
     icon: "📊",
     path: "/dashboard"
   },
   {
     title: "Despesas",
-    description: "Registre e categorize todos os seus gastos mensais",
+    description: "Registre e categorize todos os seus gastos mensais, controle orçamento familiar",
     icon: "💸",
     path: "/despesas"
   },
   {
     title: "Recebimentos",
-    description: "Controle todas as suas fontes de renda",
+    description: "Controle todas as suas fontes de renda, salários, freelances e receitas extras",
     icon: "💰",
     path: "/receitas"
   },
   {
     title: "Controle de Contas",
-    description: "Gerencie suas contas e acompanhe pagamentos",
+    description: "Gerencie suas contas a pagar e receber, acompanhe vencimentos e fluxo de caixa",
     icon: "📋",
     path: "/controle-contas"
   }
@@ -91,7 +91,7 @@ const MainMenu = () => {
           <div className="flex items-center justify-center gap-4 mb-6">
             <img 
               src="/lovable-uploads/4fec2beb-6c7e-4cea-a53b-51b0335866ca.png" 
-              alt="Logo"
+              alt="LYONPAY - Sistema de Controle Financeiro"
               className="w-16 h-16 object-contain"
             />
             <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
@@ -99,7 +99,7 @@ const MainMenu = () => {
             </h1>
           </div>
           <p className="text-lg text-white/60 max-w-2xl mx-auto">
-            Gerencie suas finanças pessoais de forma simples e eficiente
+            Sistema completo de controle financeiro pessoal - Gerencie suas finanças de forma simples e eficiente
           </p>
         </div>
 

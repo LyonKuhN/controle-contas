@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +12,7 @@ export interface Receita {
   recebido: boolean;
   observacoes?: string;
   tipo?: 'fixa' | 'variavel';
-  dia_vencimento?: number; // Para receitas fixas, o dia do mês que vence
+  dia_vencimento?: number;
   categoria?: {
     nome: string;
     cor: string;
@@ -26,10 +27,8 @@ export const useReceitas = () => {
     queryKey: ['receitas'],
     queryFn: async () => {
       console.log('🔍 === INÍCIO DA BUSCA RECEITAS ===');
-      console.log('🔍 URL Supabase:', 'https://ncjcsfnvyungxfmqszpz.supabase.co');
       
       try {
-        // Log da tentativa de autenticação
         console.log('🔍 Step 1: Verificando autenticação...');
         const authStart = performance.now();
         
@@ -39,34 +38,21 @@ export const useReceitas = () => {
         console.log(`🔍 Step 1 completo em ${authEnd - authStart}ms`);
         
         if (userError) {
-          console.error('❌ Erro de autenticação:', {
-            message: userError.message,
-            status: userError.status,
-            details: userError
-          });
+          console.error('❌ Erro de autenticação receitas:', userError);
           throw new Error(`Erro de autenticação: ${userError.message}`);
         }
         
         if (!user) {
-          console.error('❌ Usuário não autenticado - user é null');
+          console.error('❌ Usuário não autenticado para receitas');
           throw new Error('Usuário não autenticado');
         }
 
-        console.log('✅ Usuário autenticado:', {
-          id: user.id,
-          email: user.email,
-          aud: user.aud,
-          role: user.role
-        });
+        console.log('✅ Usuário autenticado para receitas:', user.email);
 
-        // Log da query ao banco
-        console.log('🔍 Step 2: Executando query no Supabase...');
-        console.log('🔍 Query SQL: SELECT id, descricao, valor, categoria_id, data_recebimento, recebido, observacoes, categoria:categorias(nome, cor) FROM receitas WHERE user_id = ?');
-        console.log('🔍 Parâmetros: user_id =', user.id);
-        
+        console.log('🔍 Step 2: Executando query receitas...');
         const queryStart = performance.now();
-        
-        const { data, error: queryError, status, statusText } = await supabase
+
+        const { data, error: queryError, status } = await supabase
           .from('receitas')
           .select(`
             id,
@@ -82,70 +68,41 @@ export const useReceitas = () => {
           .order('data_recebimento', { ascending: true });
 
         const queryEnd = performance.now();
-        console.log(`🔍 Step 2 completo em ${queryEnd - queryStart}ms`);
+        console.log(`🔍 Step 2 receitas completo em ${queryEnd - queryStart}ms`);
 
-        // Log detalhado da resposta
-        console.log('📊 Resposta da API:', {
+        console.log('📊 Resposta da API receitas:', {
           status,
-          statusText,
           data,
-          dataType: typeof data,
-          dataLength: data?.length,
-          error: queryError,
-          rawResponse: { data, error: queryError }
+          dataLength: data?.length || 0,
+          error: queryError
         });
 
         if (queryError) {
-          console.error('❌ Erro na query:', {
-            message: queryError.message,
-            details: queryError.details,
-            hint: queryError.hint,
-            code: queryError.code
-          });
+          console.error('❌ Erro na query receitas:', queryError);
           throw new Error(`Erro ao buscar receitas: ${queryError.message}`);
         }
         
         const result = (data as Receita[]) || [];
-        
-        console.log('✅ Query executada com sucesso:', {
-          totalReceitas: result.length,
-          primeiraReceita: result[0] || 'Nenhuma receita encontrada',
-          ultimaReceita: result[result.length - 1] || 'Nenhuma receita encontrada'
-        });
-        
-        console.log('🔍 === FIM DA BUSCA RECEITAS ===');
+        console.log('✅ Receitas carregadas:', result.length);
         return result;
         
       } catch (err: any) {
-        console.error('💥 === ERRO FATAL NA BUSCA ===', {
-          name: err.name,
-          message: err.message,
-          stack: err.stack,
-          cause: err.cause
-        });
+        console.error('💥 === ERRO FATAL RECEITAS ===', err);
         throw err;
       }
     },
-    retry: (failureCount, error) => {
-      console.log(`🔄 Tentativa ${failureCount + 1} falhou:`, error.message);
-      return failureCount < 2; // Máximo 3 tentativas
-    },
-    retryDelay: (attemptIndex) => {
-      const delay = Math.min(1000 * 2 ** attemptIndex, 30000);
-      console.log(`⏰ Aguardando ${delay}ms antes da próxima tentativa...`);
-      return delay;
-    },
+    retry: 1,
+    retryDelay: 1000,
     staleTime: 0,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  console.log('📈 Estado atual do hook:', { 
+  console.log('📈 Estado receitas:', { 
     receitasCount: receitas?.length || 0, 
     isLoading, 
     hasError: !!error,
-    errorMessage: error?.message,
-    errorDetails: error
+    errorMessage: error?.message
   });
 
   const createReceita = useMutation({
@@ -180,14 +137,14 @@ export const useReceitas = () => {
       queryClient.invalidateQueries({ queryKey: ['receitas'] });
       toast({
         title: "Sucesso",
-        description: "Receita cadastrada com sucesso!"
+        description: "Recebimento cadastrado com sucesso!"
       });
     },
     onError: (error: any) => {
       console.error('useReceitas: Erro na mutação:', error);
       toast({
         title: "Erro",
-        description: error.message || "Erro ao cadastrar receita",
+        description: error.message || "Erro ao cadastrar recebimento",
         variant: "destructive"
       });
     }
@@ -216,14 +173,14 @@ export const useReceitas = () => {
       queryClient.invalidateQueries({ queryKey: ['receitas'] });
       toast({
         title: "Sucesso",
-        description: "Receita atualizada com sucesso!"
+        description: "Recebimento atualizado com sucesso!"
       });
     },
     onError: (error: any) => {
       console.error('useReceitas: Erro na atualização:', error);
       toast({
         title: "Erro",
-        description: error.message || "Erro ao atualizar receita",
+        description: error.message || "Erro ao atualizar recebimento",
         variant: "destructive"
       });
     }
@@ -249,14 +206,14 @@ export const useReceitas = () => {
       queryClient.invalidateQueries({ queryKey: ['receitas'] });
       toast({
         title: "Sucesso",
-        description: "Receita removida com sucesso!"
+        description: "Recebimento removido com sucesso!"
       });
     },
     onError: (error: any) => {
       console.error('useReceitas: Erro na deleção:', error);
       toast({
         title: "Erro",
-        description: error.message || "Erro ao remover receita",
+        description: error.message || "Erro ao remover recebimento",
         variant: "destructive"
       });
     }
