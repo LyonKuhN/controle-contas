@@ -26,54 +26,44 @@ export const useDespesas = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // Query para buscar apenas despesas normais (sem modelos)
   const { data: despesas = [], isLoading, error } = useQuery({
     queryKey: ['despesas'],
     queryFn: async () => {
-      console.log('useDespesas: === INICIANDO BUSCA DETALHADA ===');
+      console.log('useDespesas: === INICIANDO BUSCA SIMPLIFICADA ===');
       
       try {
-        // Step 1: Verificar conexão básica
-        console.log('useDespesas: Step 1 - Testando conexão...');
-        const { data: testData, error: testError } = await supabase
-          .from('despesas')
-          .select('count(*)', { count: 'exact', head: true });
-        
-        console.log('useDespesas: Teste de conexão:', { testData, testError });
-        
-        if (testError) {
-          console.error('useDespesas: ERRO no teste de conexão:', testError);
-          throw new Error(`Erro de conexão: ${testError.message}`);
-        }
-
-        // Step 2: Verificar autenticação
-        console.log('useDespesas: Step 2 - Verificando autenticação...');
         const { data: { user }, error: userError } = await supabase.auth.getUser();
-        console.log('useDespesas: Dados do usuário:', { 
-          userExists: !!user, 
-          userId: user?.id, 
-          userEmail: user?.email,
-          userError: userError?.message 
-        });
         
         if (userError) {
-          console.error('useDespesas: ERRO de autenticação:', userError);
+          console.error('useDespesas: Erro de autenticação:', userError);
           throw new Error(`Erro de autenticação: ${userError.message}`);
         }
         
         if (!user) {
           console.error('useDespesas: Usuário não autenticado');
-          throw new Error('Usuário não autenticado - faça login novamente');
+          throw new Error('Usuário não autenticado');
         }
 
-        // Step 3: Buscar despesas
-        console.log('useDespesas: Step 3 - Buscando despesas...');
-        const { data, error: queryError, count } = await supabase
+        console.log('useDespesas: Usuário autenticado:', user.email);
+
+        const { data, error: queryError } = await supabase
           .from('despesas')
           .select(`
-            *,
+            id,
+            descricao,
+            valor,
+            categoria_id,
+            data_vencimento,
+            pago,
+            data_pagamento,
+            observacoes,
+            tipo,
+            numero_parcelas,
+            valor_total,
+            parcela_atual,
+            is_modelo,
             categoria:categorias(nome, cor)
-          `, { count: 'exact' })
+          `)
           .eq('user_id', user.id)
           .eq('is_modelo', false)
           .order('data_vencimento', { ascending: true });
@@ -81,69 +71,41 @@ export const useDespesas = () => {
         console.log('useDespesas: Resultado da query:', { 
           data: data, 
           dataLength: data?.length || 0,
-          count: count,
           error: queryError,
-          queryDetails: {
-            table: 'despesas',
-            userId: user.id,
-            isModelo: false,
-            orderBy: 'data_vencimento'
-          }
+          userId: user.id
         });
 
         if (queryError) {
-          console.error('useDespesas: ERRO na query:', {
-            error: queryError,
-            code: queryError.code,
-            message: queryError.message,
-            details: queryError.details
-          });
-          
-          if (queryError.code === 'PGRST116' || queryError.message?.includes('RLS') || queryError.message?.includes('policy')) {
-            throw new Error('Erro de permissão: As políticas de segurança estão bloqueando o acesso aos dados.');
-          }
-          
+          console.error('useDespesas: Erro na query:', queryError);
           throw new Error(`Erro ao buscar despesas: ${queryError.message}`);
         }
         
-        if (!data) {
-          console.warn('useDespesas: Query retornou null/undefined');
-          return [];
-        }
-
-        console.log('useDespesas: === BUSCA CONCLUÍDA ===', { total: data.length });
-        return data as Despesa[];
+        const result = (data as Despesa[]) || [];
+        console.log('useDespesas: === BUSCA CONCLUÍDA ===', { total: result.length });
+        return result;
         
       } catch (err: any) {
         console.error('useDespesas: === ERRO FATAL ===', err);
         throw err;
       }
     },
-    retry: (failureCount, error: any) => {
-      console.log('useDespesas: Tentativa de retry:', { failureCount, errorMessage: error?.message });
-      if (error?.message?.includes('autenticação') || error?.message?.includes('permissão')) {
-        return false;
-      }
-      return failureCount < 3;
-    },
-    retryDelay: attemptIndex => Math.min(1000 * 2 ** attemptIndex, 30000),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    retry: 1,
+    retryDelay: 1000,
+    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 
-  console.log('useDespesas: === ESTADO ATUAL ===', { 
+  console.log('useDespesas: Estado atual:', { 
     despesasCount: despesas?.length || 0, 
     isLoading, 
     hasError: !!error,
-    errorMessage: error?.message,
-    timestamp: new Date().toISOString()
+    errorMessage: error?.message
   });
 
-  // Query separada para buscar todas as despesas (incluindo modelos) - usado no ControleContas
   const { data: todasDespesas = [] } = useQuery({
     queryKey: ['todas-despesas'],
     queryFn: async () => {
-      console.log('useDespesas: Buscando todas as despesas (incluindo modelos)...');
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         throw new Error('Usuário não autenticado');
@@ -159,10 +121,8 @@ export const useDespesas = () => {
         .order('data_vencimento', { ascending: true });
 
       if (error) {
-        console.error('useDespesas: Erro ao buscar todas as despesas:', error);
         throw error;
       }
-      console.log('useDespesas: Todas as despesas carregadas (incluindo modelos):', data);
       return data as Despesa[];
     }
   });
@@ -418,9 +378,9 @@ export const useDespesas = () => {
 
   return {
     despesas,
-    todasDespesas, // Novo retorno para usar no ControleContas
+    todasDespesas,
     isLoading,
-    error, // Now exposing error from the query
+    error,
     createDespesa,
     updateDespesa,
     deleteDespesa,
