@@ -19,13 +19,11 @@ import ControleContas from "./pages/ControleContas";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 import { useAuth } from "@/hooks/useAuth";
-import { useProfile } from "@/hooks/useProfile";
 
 const queryClient = new QueryClient();
 
 const AppContent = () => {
-  const { showDisplayNameModal, setShowDisplayNameModal } = useAuth();
-  const { createProfile } = useProfile();
+  const { showDisplayNameModal, setShowDisplayNameModal, createProfile } = useAuth();
 
   const handleDisplayNameSubmit = async (displayName: string) => {
     const result = await createProfile(displayName);

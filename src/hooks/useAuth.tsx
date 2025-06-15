@@ -2,6 +2,7 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface SubscriptionData {
   subscribed: boolean;
@@ -30,11 +31,15 @@ interface AuthContextType {
   userName: string | null;
   showDisplayNameModal: boolean;
   setShowDisplayNameModal: (show: boolean) => void;
+  createProfile: (displayName: string) => Promise<{ error?: string; data?: Profile }>;
+  updateProfile: (displayName: string) => Promise<{ error?: string; data?: Profile }>;
+  refetchProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null);
@@ -45,6 +50,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
+      console.log('Fetching profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -56,14 +62,80 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return;
       }
 
+      console.log('Profile fetched:', data);
       setProfile(data);
       
       // If user is logged in but has no profile, show the modal
       if (!data) {
+        console.log('No profile found, showing display name modal');
         setShowDisplayNameModal(true);
+      } else {
+        setShowDisplayNameModal(false);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
+    }
+  };
+
+  const createProfile = async (displayName: string) => {
+    if (!user) return { error: 'User not authenticated' };
+
+    console.log('Creating profile with display name:', displayName);
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .insert([{
+          user_id: user.id,
+          display_name: displayName
+        }])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating profile:', error);
+        return { error: error.message };
+      }
+
+      console.log('Profile created successfully:', data);
+      setProfile(data);
+      toast({
+        title: "Perfil criado",
+        description: "Seu nome de exibição foi definido com sucesso!"
+      });
+      
+      return { data };
+    } catch (error) {
+      console.error('Error creating profile:', error);
+      return { error: 'Erro ao criar perfil' };
+    }
+  };
+
+  const updateProfile = async (displayName: string) => {
+    if (!user || !profile) return { error: 'Profile not found' };
+
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .update({ display_name: displayName })
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating profile:', error);
+        return { error: error.message };
+      }
+
+      setProfile(data);
+      toast({
+        title: "Perfil atualizado",
+        description: "Seu nome de exibição foi atualizado com sucesso!"
+      });
+      
+      return { data };
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      return { error: 'Erro ao atualizar perfil' };
     }
   };
 
@@ -97,18 +169,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setLoading(false);
         
         if (session?.user) {
-          // Extract user name from metadata or profile
-          if (profile?.display_name) {
-            setUserName(profile.display_name);
-          } else if (session.user.user_metadata?.full_name) {
-            setUserName(session.user.user_metadata.full_name);
-          } else {
-            // Fallback to first part of email
-            const emailName = session.user.email?.split('@')[0] || '';
-            setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
-          }
-
-          // Fetch profile and check subscription
+          // Fetch profile first
           await fetchProfile(session.user.id);
           
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -185,8 +246,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     if (profile?.display_name) {
       setUserName(profile.display_name);
+    } else if (user?.user_metadata?.full_name) {
+      setUserName(user.user_metadata.full_name);
+    } else if (user?.email) {
+      // Fallback to first part of email
+      const emailName = user.email.split('@')[0] || '';
+      setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
     }
-  }, [profile]);
+  }, [profile, user]);
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     const redirectUrl = `${window.location.origin}/`;
@@ -229,7 +296,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       loading,
       userName,
       showDisplayNameModal,
-      setShowDisplayNameModal
+      setShowDisplayNameModal,
+      createProfile,
+      updateProfile,
+      refetchProfile: () => user ? fetchProfile(user.id) : Promise.resolve()
     }}>
       {children}
     </AuthContext.Provider>

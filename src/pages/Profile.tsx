@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
 import { useStripePrice } from '@/hooks/useStripePrice';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,8 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import SubscriptionDialog from '@/components/SubscriptionDialog';
 
 const Profile = () => {
-  const { user, signOut, subscriptionData, session, userName } = useAuth();
-  const { profile, updateProfile } = useProfile();
+  const { user, signOut, subscriptionData, session, userName, profile, updateProfile } = useAuth();
   const { priceData } = useStripePrice();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
