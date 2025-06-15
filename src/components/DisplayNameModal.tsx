@@ -39,7 +39,7 @@ const DisplayNameModal = ({ isOpen, onSubmit, loading = false }: DisplayNameModa
 
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
-      <DialogContent className="sm:max-w-md" hideCloseButton>
+      <DialogContent className="sm:max-w-md [&>button]:hidden">
         <DialogHeader className="text-center">
           <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
             <User className="w-6 h-6 text-primary" />
