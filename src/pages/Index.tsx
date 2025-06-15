@@ -15,7 +15,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 const menuItems = [
   {
     title: "Despesas",
-    description: "Registre e categorize todos os seus gastos mensais, controle orçamento familiar, organize despesas fixas e variáveis",
+    description: "Registre e categorize todos os seus gastos mensais, controle orçamento familiar",
     icon: "💸",
     path: "/despesas"
   },
