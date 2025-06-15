@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -27,7 +28,7 @@ export const useDespesas = () => {
   const queryClient = useQueryClient();
 
   // Query para buscar apenas despesas normais (sem modelos)
-  const { data: despesas = [], isLoading } = useQuery({
+  const { data: despesas = [], isLoading, error } = useQuery({
     queryKey: ['despesas'],
     queryFn: async () => {
       console.log('Buscando despesas do banco de dados...');
@@ -330,6 +331,7 @@ export const useDespesas = () => {
     despesas,
     todasDespesas, // Novo retorno para usar no ControleContas
     isLoading,
+    error, // Now exposing error from the query
     createDespesa,
     updateDespesa,
     deleteDespesa,

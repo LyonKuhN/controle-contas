@@ -74,9 +74,20 @@ export const useReceitas = () => {
       console.log('useReceitas: Criando recebimento:', receita);
       
       try {
+        // Obter o usuário autenticado
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          throw new Error('Usuário não autenticado');
+        }
+
+        const receitaData = {
+          ...receita,
+          user_id: user.id
+        };
+
         const { data, error } = await supabase
           .from('receitas')
-          .insert([receita])
+          .insert([receitaData])
           .select()
           .single();
 
