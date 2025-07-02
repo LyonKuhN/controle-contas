@@ -30,68 +30,43 @@ export const useDespesas = () => {
   const { data: despesas = [], isLoading, error } = useQuery({
     queryKey: ['despesas'],
     queryFn: async () => {
-      console.log('🔍 useDespesas: Iniciando busca de despesas...');
-      
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        if (userError) {
-          console.error('❌ useDespesas: Erro de autenticação:', userError);
-          throw new Error(`Erro de autenticação: ${userError.message}`);
-        }
-        
-        if (!user) {
-          console.error('❌ useDespesas: Usuário não autenticado');
-          throw new Error('Usuário não autenticado');
-        }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
 
-        console.log('✅ useDespesas: Usuário autenticado:', user.email);
+      const { data, error: queryError } = await supabase
+        .from('despesas')
+        .select(`
+          id,
+          descricao,
+          valor,
+          categoria_id,
+          data_vencimento,
+          pago,
+          data_pagamento,
+          observacoes,
+          tipo,
+          numero_parcelas,
+          valor_total,
+          parcela_atual,
+          is_modelo,
+          categoria:categorias(nome, cor)
+        `)
+        .eq('user_id', user.id)
+        .eq('is_modelo', false)
+        .order('data_vencimento', { ascending: true });
 
-        const { data, error: queryError } = await supabase
-          .from('despesas')
-          .select(`
-            id,
-            descricao,
-            valor,
-            categoria_id,
-            data_vencimento,
-            pago,
-            data_pagamento,
-            observacoes,
-            tipo,
-            numero_parcelas,
-            valor_total,
-            parcela_atual,
-            is_modelo,
-            categoria:categorias(nome, cor)
-          `)
-          .eq('user_id', user.id)
-          .eq('is_modelo', false)
-          .order('data_vencimento', { ascending: true });
-
-        console.log('📊 useDespesas: Resposta completa da API:', { data, error: queryError });
-
-        if (queryError) {
-          console.error('❌ useDespesas: Erro na query:', queryError);
-          throw new Error(`Erro ao buscar despesas: ${queryError.message}`);
-        }
-        
-        const result = (data as Despesa[]) || [];
-        console.log('✅ useDespesas: Despesas carregadas com sucesso:', result.length, 'itens');
-        return result;
-      } catch (error) {
-        console.error('❌ useDespesas: Erro geral:', error);
-        throw error;
-      }
+      if (queryError) throw queryError;
+      return (data as Despesa[]) || [];
     },
     enabled: true,
-    retry: 1,
-    retryDelay: 1000,
-    staleTime: 30000, // 30 segundos
-    gcTime: 300000, // 5 minutos
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    refetchOnMount: 'always',
+    refetchOnReconnect: true,
+    networkMode: 'online'
   });
 
   console.log('📈 useDespesas: Estado final:', { 

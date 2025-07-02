@@ -26,61 +26,36 @@ export const useReceitas = () => {
   const { data: receitas = [], isLoading, error } = useQuery({
     queryKey: ['receitas'],
     queryFn: async () => {
-      console.log('🔍 useReceitas: Iniciando busca de receitas...');
-      
-      try {
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        
-        if (userError) {
-          console.error('❌ useReceitas: Erro de autenticação:', userError);
-          throw new Error(`Erro de autenticação: ${userError.message}`);
-        }
-        
-        if (!user) {
-          console.error('❌ useReceitas: Usuário não autenticado');
-          throw new Error('Usuário não autenticado');
-        }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuário não autenticado');
 
-        console.log('✅ useReceitas: Usuário autenticado:', user.email);
+      const { data, error: queryError } = await supabase
+        .from('receitas')
+        .select(`
+          id,
+          descricao,
+          valor,
+          categoria_id,
+          data_recebimento,
+          recebido,
+          observacoes,
+          categoria:categorias(nome, cor)
+        `)
+        .eq('user_id', user.id)
+        .order('data_recebimento', { ascending: true });
 
-        const { data, error: queryError } = await supabase
-          .from('receitas')
-          .select(`
-            id,
-            descricao,
-            valor,
-            categoria_id,
-            data_recebimento,
-            recebido,
-            observacoes,
-            categoria:categorias(nome, cor)
-          `)
-          .eq('user_id', user.id)
-          .order('data_recebimento', { ascending: true });
-
-        console.log('📊 useReceitas: Resposta completa da API:', { data, error: queryError });
-
-        if (queryError) {
-          console.error('❌ useReceitas: Erro na query:', queryError);
-          throw new Error(`Erro ao buscar receitas: ${queryError.message}`);
-        }
-        
-        const result = (data as Receita[]) || [];
-        console.log('✅ useReceitas: Receitas carregadas com sucesso:', result.length, 'itens');
-        return result;
-      } catch (error) {
-        console.error('❌ useReceitas: Erro geral:', error);
-        throw error;
-      }
+      if (queryError) throw queryError;
+      return (data as Receita[]) || [];
     },
     enabled: true,
-    retry: 1,
-    retryDelay: 1000,
-    staleTime: 30000, // 30 segundos
-    gcTime: 300000, // 5 minutos
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
+    refetchOnMount: 'always',
+    refetchOnReconnect: true,
+    networkMode: 'online'
   });
 
   console.log('📈 useReceitas: Estado final:', { 
