@@ -10,6 +10,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import SubscriptionGuard from "@/components/SubscriptionGuard";
 import TrialExpiredOverlay from "@/components/TrialExpiredOverlay";
 import DisplayNameModal from "@/components/DisplayNameModal";
+import ConnectivityOverlay from "@/components/ConnectivityOverlay";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -74,6 +75,7 @@ const AppContent = () => {
         <Route path="*" element={<NotFound />} />
       </Routes>
       <TrialExpiredOverlay />
+      <ConnectivityOverlay />
       <DisplayNameModal 
         isOpen={showDisplayNameModal} 
         onSubmit={handleDisplayNameSubmit}

@@ -2,11 +2,15 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, CheckCircle, TrendingUp, DollarSign, PieChart } from 'lucide-react';
+import { useScrollAnimation, useScrollAnimationList } from '@/hooks/useScrollAnimation';
 
 const HeroSection = () => {
+  const { ref: previewRef, isVisible: isPreviewVisible } = useScrollAnimation({ threshold: 0.2 });
+  const { visibleItems, setRef } = useScrollAnimationList(3, { threshold: 0.3 });
+
   return (
     <div className="container mx-auto px-4 py-16">
-      <div className="text-center mb-20">
+      <div className="text-center mb-20 animate-fade-in">
         {/* Badge de Oferta */}
         <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-50 to-blue-50 dark:from-emerald-950/50 dark:to-blue-950/50 text-foreground border border-emerald-200 dark:border-emerald-800 px-6 py-3 rounded-full mb-8 backdrop-blur-sm shadow-sm">
           <CheckCircle className="w-4 h-4 text-emerald-600" />
@@ -36,31 +40,39 @@ const HeroSection = () => {
       </div>
 
       {/* Preview do Sistema */}
-      <div className="relative">
+      <div 
+        ref={previewRef as any}
+        className={`relative transition-all duration-700 ${
+          isPreviewVisible 
+            ? 'opacity-100 translate-y-0' 
+            : 'opacity-0 translate-y-8'
+        }`}
+      >
         <div className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-2xl p-8 border-2 border-primary/20 backdrop-blur-sm">
           <h3 className="text-2xl md:text-3xl font-bold mb-6 text-foreground text-center">Veja como é simples:</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-card/80 backdrop-blur rounded-lg p-6 border border-primary/20 hover:border-primary/40 transition-all duration-300">
-              <div className="flex justify-center mb-4">
-                <TrendingUp className="w-12 h-12 text-primary" />
+            {[
+              { icon: TrendingUp, title: "Dashboard Inteligente", desc: "Gráficos em tempo real dos seus gastos com análises detalhadas" },
+              { icon: DollarSign, title: "Controle de Despesas", desc: "Categorização automática e inteligente de todos os gastos" },
+              { icon: PieChart, title: "Relatórios Detalhados", desc: "Análises completas e exportáveis do seu dinheiro" }
+            ].map((feature, index) => (
+              <div 
+                key={index}
+                ref={setRef(index) as any}
+                className={`bg-card/80 backdrop-blur rounded-lg p-6 border border-primary/20 hover:border-primary/40 transition-all duration-700 ${
+                  visibleItems[index]
+                    ? 'opacity-100 translate-y-0 scale-100'
+                    : 'opacity-0 translate-y-6 scale-95'
+                }`}
+                style={{ transitionDelay: `${index * 200}ms` }}
+              >
+                <div className="flex justify-center mb-4">
+                  <feature.icon className="w-12 h-12 text-primary" />
+                </div>
+                <h4 className="font-bold mb-3 text-card-foreground text-lg text-center">{feature.title}</h4>
+                <p className="text-sm text-muted-foreground text-center">{feature.desc}</p>
               </div>
-              <h4 className="font-bold mb-3 text-card-foreground text-lg text-center">Dashboard Inteligente</h4>
-              <p className="text-sm text-muted-foreground text-center">Gráficos em tempo real dos seus gastos com análises detalhadas</p>
-            </div>
-            <div className="bg-card/80 backdrop-blur rounded-lg p-6 border border-primary/20 hover:border-primary/40 transition-all duration-300">
-              <div className="flex justify-center mb-4">
-                <DollarSign className="w-12 h-12 text-primary" />
-              </div>
-              <h4 className="font-bold mb-3 text-card-foreground text-lg text-center">Controle de Despesas</h4>
-              <p className="text-sm text-muted-foreground text-center">Categorização automática e inteligente de todos os gastos</p>
-            </div>
-            <div className="bg-card/80 backdrop-blur rounded-lg p-6 border border-primary/20 hover:border-primary/40 transition-all duration-300">
-              <div className="flex justify-center mb-4">
-                <PieChart className="w-12 h-12 text-primary" />
-              </div>
-              <h4 className="font-bold mb-3 text-card-foreground text-lg text-center">Relatórios Detalhados</h4>
-              <p className="text-sm text-muted-foreground text-center">Análises completas e exportáveis do seu dinheiro</p>
-            </div>
+            ))}
           </div>
         </div>
       </div>

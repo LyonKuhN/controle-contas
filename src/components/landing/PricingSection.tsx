@@ -4,9 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { CheckCircle } from 'lucide-react';
 import { useStripePrice } from '@/hooks/useStripePrice';
+import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 const PricingSection = () => {
   const { priceData, loading, error } = useStripePrice();
+  const { ref: sectionRef, isVisible } = useScrollAnimation({ threshold: 0.2 });
 
   console.log('PricingSection: Estado atual:', { 
     hasPrice: !!priceData, 
@@ -34,8 +36,15 @@ const PricingSection = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 mb-20">
-      <div className="text-center mb-20">
+    <div 
+      ref={sectionRef as any}
+      className="container mx-auto px-4 mb-20"
+    >
+      <div className={`text-center mb-20 transition-all duration-700 ${
+        isVisible 
+          ? 'opacity-100 translate-y-0' 
+          : 'opacity-0 translate-y-8'
+      }`}>
         <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">
           Plano Simples e <span className="text-primary">Transparente</span>
         </h2>
@@ -43,7 +52,11 @@ const PricingSection = () => {
           Comece grátis e continue pagando apenas o que vale a pena
         </p>
 
-        <div className="max-w-md mx-auto">
+        <div className={`max-w-md mx-auto transition-all duration-700 delay-300 ${
+          isVisible 
+            ? 'opacity-100 translate-y-0 scale-100' 
+            : 'opacity-0 translate-y-8 scale-95'
+        }`}>
           <Card className="p-8 border-2 border-primary bg-gradient-to-b from-primary/5 to-accent/5">
             <div className="text-center">
               <h3 className="text-2xl font-bold mb-2 text-card-foreground">Plano Premium</h3>
