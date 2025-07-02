@@ -26,8 +26,15 @@ export const useReceitas = () => {
   const { data: receitas = [], isLoading, error } = useQuery({
     queryKey: ['receitas'],
     queryFn: async () => {
+      console.log('🔄 useReceitas: Iniciando busca de receitas...');
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user) {
+        console.log('❌ useReceitas: Usuário não autenticado');
+        throw new Error('Usuário não autenticado');
+      }
+
+      console.log('✅ useReceitas: Usuário autenticado:', user.id);
 
       const { data, error: queryError } = await supabase
         .from('receitas')
@@ -44,16 +51,21 @@ export const useReceitas = () => {
         .eq('user_id', user.id)
         .order('data_recebimento', { ascending: true });
 
-      if (queryError) throw queryError;
+      if (queryError) {
+        console.error('❌ useReceitas: Erro na query:', queryError);
+        throw queryError;
+      }
+      
+      console.log('✅ useReceitas: Dados carregados:', data?.length || 0, 'receitas');
       return (data as Receita[]) || [];
     },
     enabled: true,
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    retry: 1,
+    retryDelay: 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos
     refetchOnWindowFocus: false,
-    refetchOnMount: 'always',
+    refetchOnMount: false,
     refetchOnReconnect: true,
     networkMode: 'online'
   });

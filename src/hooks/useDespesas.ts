@@ -30,8 +30,15 @@ export const useDespesas = () => {
   const { data: despesas = [], isLoading, error } = useQuery({
     queryKey: ['despesas'],
     queryFn: async () => {
+      console.log('🔄 useDespesas: Iniciando busca de despesas...');
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuário não autenticado');
+      if (!user) {
+        console.log('❌ useDespesas: Usuário não autenticado');
+        throw new Error('Usuário não autenticado');
+      }
+
+      console.log('✅ useDespesas: Usuário autenticado:', user.id);
 
       const { data, error: queryError } = await supabase
         .from('despesas')
@@ -55,16 +62,21 @@ export const useDespesas = () => {
         .eq('is_modelo', false)
         .order('data_vencimento', { ascending: true });
 
-      if (queryError) throw queryError;
+      if (queryError) {
+        console.error('❌ useDespesas: Erro na query:', queryError);
+        throw queryError;
+      }
+      
+      console.log('✅ useDespesas: Dados carregados:', data?.length || 0, 'despesas');
       return (data as Despesa[]) || [];
     },
     enabled: true,
-    retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    retry: 1,
+    retryDelay: 1000,
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos
     refetchOnWindowFocus: false,
-    refetchOnMount: 'always',
+    refetchOnMount: false,
     refetchOnReconnect: true,
     networkMode: 'online'
   });
