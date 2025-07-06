@@ -36,9 +36,11 @@ export const useSupabaseConnectivity = () => {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 8000);
 
+      // Use a simple query that will work regardless of RLS
       const { data, error } = await supabase
         .from('categorias')
-        .select('count(*)', { count: 'exact', head: true })
+        .select('id')
+        .limit(1)
         .abortSignal(controller.signal);
 
       clearTimeout(timeoutId);
