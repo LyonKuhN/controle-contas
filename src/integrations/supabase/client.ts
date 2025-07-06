@@ -30,7 +30,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
   },
   realtime: {
     params: {
-      eventsPerSecond: 2
+      eventsPerSecond: 1, // Reduced from 2 to prevent overwhelming with multiple users
+      timeout: 30000, // 30 second timeout
+      heartbeatIntervalMs: 30000 // 30 second heartbeat
     }
   }
 });

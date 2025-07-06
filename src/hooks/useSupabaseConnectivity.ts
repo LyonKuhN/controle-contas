@@ -16,22 +16,41 @@ export const useSupabaseConnectivity = () => {
     lastError: null
   });
 
-  // Test Supabase connectivity
+  // Track connection attempts to prevent multiple simultaneous tests
+  const [isTestingConnection, setIsTestingConnection] = useState(false);
+
+  // Test Supabase connectivity with concurrency control
   const testSupabaseConnection = async () => {
+    // Prevent multiple simultaneous connection tests
+    if (isTestingConnection) {
+      console.log('🔄 Teste de conectividade já em andamento, aguardando...');
+      return state.isSupabaseConnected;
+    }
+
+    setIsTestingConnection(true);
+
     try {
       console.log('🔍 Testando conectividade com Supabase...');
       
-      // Simple ping to test connection
-      const { data, error } = await supabase
+      // Use a timeout to prevent hanging connections
+      const connectionPromise = supabase
         .from('categorias')
         .select('count(*)', { count: 'exact', head: true });
+
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout de conexão - 10 segundos')), 10000);
+      });
+
+      const { data, error } = await Promise.race([connectionPromise, timeoutPromise]) as any;
       
       if (error) {
-        console.error('❌ Erro de conectividade Supabase:', error);
+        const errorMessage = error.message || 'Erro de conectividade desconhecido';
+        console.error('❌ Erro de conectividade Supabase:', errorMessage);
+        
         setState(prev => ({
           ...prev,
           isSupabaseConnected: false,
-          lastError: error.message,
+          lastError: errorMessage,
           isReconnecting: false
         }));
         return false;
@@ -46,29 +65,46 @@ export const useSupabaseConnectivity = () => {
       }));
       return true;
     } catch (error) {
-      console.error('❌ Erro de rede:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Erro de rede desconhecido';
+      console.error('❌ Erro de rede:', errorMessage);
+      
       setState(prev => ({
         ...prev,
         isSupabaseConnected: false,
-        lastError: error instanceof Error ? error.message : 'Erro de conexão',
+        lastError: errorMessage,
         isReconnecting: false
       }));
       return false;
+    } finally {
+      setIsTestingConnection(false);
     }
   };
 
-  // Attempt reconnection
+  // Attempt reconnection with backoff strategy
   const attemptReconnection = async () => {
+    // Prevent multiple simultaneous reconnection attempts
+    if (state.isReconnecting || isTestingConnection) {
+      console.log('🔄 Reconexão já em andamento...');
+      return;
+    }
+
     setState(prev => ({ ...prev, isReconnecting: true }));
     console.log('🔄 Tentando reconectar com Supabase...');
     
     const connected = await testSupabaseConnection();
     
-    if (!connected) {
-      // Retry after 3 seconds
+    if (!connected && navigator.onLine) {
+      // Exponential backoff: retry after 5 seconds, then 10, then 20
+      const retryDelay = Math.min(5000 * Math.pow(2, Math.floor(Date.now() / 10000) % 3), 20000);
+      console.log(`🔄 Tentando novamente em ${retryDelay / 1000} segundos...`);
+      
       setTimeout(() => {
-        attemptReconnection();
-      }, 3000);
+        if (navigator.onLine && !state.isSupabaseConnected) {
+          attemptReconnection();
+        }
+      }, retryDelay);
+    } else {
+      setState(prev => ({ ...prev, isReconnecting: false }));
     }
   };
 
@@ -96,12 +132,12 @@ export const useSupabaseConnectivity = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Test connectivity every 30 seconds
+    // Test connectivity every 60 seconds (reduced frequency to avoid overwhelming)
     const interval = setInterval(() => {
-      if (navigator.onLine && !state.isSupabaseConnected && !state.isReconnecting) {
+      if (navigator.onLine && !state.isSupabaseConnected && !state.isReconnecting && !isTestingConnection) {
         testSupabaseConnection();
       }
-    }, 30000);
+    }, 60000);
 
     return () => {
       window.removeEventListener('online', handleOnline);
