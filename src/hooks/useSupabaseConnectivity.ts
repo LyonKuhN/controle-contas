@@ -32,19 +32,19 @@ export const useSupabaseConnectivity = () => {
     try {
       console.log('🔍 Testando conectividade com Supabase...');
       
-      // Use a timeout to prevent hanging connections
-      const connectionPromise = supabase
+      // Simple connectivity test with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
+
+      const { data, error } = await supabase
         .from('categorias')
-        .select('count(*)', { count: 'exact', head: true });
+        .select('count(*)', { count: 'exact', head: true })
+        .abortSignal(controller.signal);
 
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout de conexão - 10 segundos')), 10000);
-      });
-
-      const { data, error } = await Promise.race([connectionPromise, timeoutPromise]) as any;
+      clearTimeout(timeoutId);
       
       if (error) {
-        const errorMessage = error.message || 'Erro de conectividade desconhecido';
+        const errorMessage = error.message || 'Erro de conectividade com o banco';
         console.error('❌ Erro de conectividade Supabase:', errorMessage);
         
         setState(prev => ({
@@ -65,8 +65,17 @@ export const useSupabaseConnectivity = () => {
       }));
       return true;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Erro de rede desconhecido';
-      console.error('❌ Erro de rede:', errorMessage);
+      let errorMessage = 'Erro de conexão desconhecido';
+      
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = 'Timeout na conexão (8 segundos)';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
+      console.error('❌ Erro de conectividade:', errorMessage);
       
       setState(prev => ({
         ...prev,
