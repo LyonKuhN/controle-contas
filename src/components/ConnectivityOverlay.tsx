@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle, Wifi, WifiOff, RotateCcw } from 'lucide-react';
 import { useSupabaseConnectivity } from '@/hooks/useSupabaseConnectivity';
 
 const ConnectivityOverlay = () => {
+  const location = useLocation();
   const { 
     isOnline, 
     isSupabaseConnected, 
@@ -12,6 +14,13 @@ const ConnectivityOverlay = () => {
     lastError, 
     reconnect 
   } = useSupabaseConnectivity();
+
+  // Não mostrar overlay na landing page
+  const isLandingPage = location.pathname === '/';
+  
+  if (isLandingPage) {
+    return null;
+  }
 
   // Block user interactions when offline
   useEffect(() => {
