@@ -32,16 +32,12 @@ export const useSupabaseConnectivity = () => {
     try {
       console.log('🔍 Testando conectividade com Supabase...');
       
-      // Simple connectivity test with timeout
+      // Simple connectivity test with timeout - use auth endpoint which doesn't require RLS
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-      // Use a simple query that will work regardless of RLS
-      const { data, error } = await supabase
-        .from('categorias')
-        .select('id')
-        .limit(1)
-        .abortSignal(controller.signal);
+      // Test connectivity using a simple operation that always works
+      const { error } = await supabase.auth.getSession();
 
       clearTimeout(timeoutId);
       
@@ -71,7 +67,7 @@ export const useSupabaseConnectivity = () => {
       
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          errorMessage = 'Timeout na conexão (8 segundos)';
+          errorMessage = 'Timeout na conexão (5 segundos)';
         } else {
           errorMessage = error.message;
         }
