@@ -15,15 +15,12 @@ const ConnectivityOverlay = () => {
     reconnect 
   } = useSupabaseConnectivity();
 
-  // Não mostrar overlay na landing page
   const isLandingPage = location.pathname === '/';
-  
-  if (isLandingPage) {
-    return null;
-  }
 
-  // Block user interactions when offline
+  // Block user interactions when offline (but only if not on landing page)
   useEffect(() => {
+    if (isLandingPage) return; // Don't block interactions on landing page
+    
     if (!isOnline || !isSupabaseConnected) {
       document.body.style.pointerEvents = 'none';
       const overlay = document.querySelector('[data-connectivity-overlay]') as HTMLElement;
@@ -37,9 +34,10 @@ const ConnectivityOverlay = () => {
     return () => {
       document.body.style.pointerEvents = 'auto';
     };
-  }, [isOnline, isSupabaseConnected]);
+  }, [isOnline, isSupabaseConnected, isLandingPage]);
 
-  if (isOnline && isSupabaseConnected) {
+  // Don't show overlay on landing page or when connected
+  if (isLandingPage || (isOnline && isSupabaseConnected)) {
     return null;
   }
 
