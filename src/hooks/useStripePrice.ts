@@ -8,13 +8,41 @@ interface PriceData {
   formatted: string;
 }
 
+// Cache global para evitar múltiplas chamadas
+let priceCache: PriceData | null = null;
+let cacheError: string | null = null;
+let isFetching = false;
+let fetchPromise: Promise<void> | null = null;
+
 export const useStripePrice = () => {
-  const [priceData, setPriceData] = useState<PriceData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [priceData, setPriceData] = useState<PriceData | null>(priceCache);
+  const [loading, setLoading] = useState(!priceCache && !cacheError);
+  const [error, setError] = useState<string | null>(cacheError);
 
   useEffect(() => {
+    // Se já temos dados em cache ou erro, não fazer nova requisição
+    if (priceCache || cacheError) {
+      setPriceData(priceCache);
+      setError(cacheError);
+      setLoading(false);
+      return;
+    }
+
+    // Se já está fazendo fetch, aguardar o resultado
+    if (isFetching && fetchPromise) {
+      fetchPromise.then(() => {
+        setPriceData(priceCache);
+        setError(cacheError);
+        setLoading(false);
+      });
+      return;
+    }
+
     const fetchPrice = async () => {
+      if (isFetching) return;
+      
+      isFetching = true;
+      
       try {
         console.log('useStripePrice: Iniciando busca do preço...');
         
@@ -26,18 +54,25 @@ export const useStripePrice = () => {
         }
         
         console.log('useStripePrice: Preço carregado com sucesso:', data);
+        priceCache = data;
+        cacheError = null;
         setPriceData(data);
         setError(null);
       } catch (err) {
         console.error('useStripePrice: Erro ao buscar preço:', err);
-        setError(err instanceof Error ? err.message : 'Erro ao buscar preço');
-        setPriceData(null); // Importante: não definir fallback aqui
+        const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar preço';
+        cacheError = errorMessage;
+        priceCache = null;
+        setError(errorMessage);
+        setPriceData(null);
       } finally {
         setLoading(false);
+        isFetching = false;
+        fetchPromise = null;
       }
     };
 
-    fetchPrice();
+    fetchPromise = fetchPrice();
   }, []);
 
   return { priceData, loading, error };
