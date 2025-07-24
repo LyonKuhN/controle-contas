@@ -8,71 +8,127 @@ interface PriceData {
   formatted: string;
 }
 
-// Cache global para evitar múltiplas chamadas
-let priceCache: PriceData | null = null;
-let cacheError: string | null = null;
-let isFetching = false;
-let fetchPromise: Promise<void> | null = null;
+// Cache global com timestamp para expiração
+let priceCache: { data: PriceData; timestamp: number } | null = null;
+let cacheError: { error: string; timestamp: number } | null = null;
+let activeFetchPromise: Promise<PriceData> | null = null;
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+
+const isCacheValid = (cacheItem: { timestamp: number } | null): boolean => {
+  if (!cacheItem) return false;
+  return Date.now() - cacheItem.timestamp < CACHE_DURATION;
+};
 
 export const useStripePrice = () => {
-  const [priceData, setPriceData] = useState<PriceData | null>(priceCache);
-  const [loading, setLoading] = useState(!priceCache && !cacheError);
-  const [error, setError] = useState<string | null>(cacheError);
+  const [priceData, setPriceData] = useState<PriceData | null>(
+    isCacheValid(priceCache) ? priceCache?.data || null : null
+  );
+  const [loading, setLoading] = useState(
+    !isCacheValid(priceCache) && !isCacheValid(cacheError)
+  );
+  const [error, setError] = useState<string | null>(
+    isCacheValid(cacheError) ? cacheError?.error || null : null
+  );
 
   useEffect(() => {
-    // Se já temos dados em cache ou erro, não fazer nova requisição
-    if (priceCache || cacheError) {
-      setPriceData(priceCache);
-      setError(cacheError);
+    // Se temos dados válidos em cache, usar eles
+    if (isCacheValid(priceCache)) {
+      setPriceData(priceCache!.data);
+      setError(null);
       setLoading(false);
       return;
     }
 
-    // Se já está fazendo fetch, aguardar o resultado
-    if (isFetching && fetchPromise) {
-      fetchPromise.then(() => {
-        setPriceData(priceCache);
-        setError(cacheError);
-        setLoading(false);
-      });
+    // Se temos erro válido em cache, usar ele
+    if (isCacheValid(cacheError)) {
+      setError(cacheError!.error);
+      setPriceData(null);
+      setLoading(false);
       return;
     }
 
-    const fetchPrice = async () => {
-      if (isFetching) return;
-      
-      isFetching = true;
-      
+    // Se já existe uma requisição ativa, aguardá-la
+    if (activeFetchPromise) {
+      activeFetchPromise
+        .then((data) => {
+          setPriceData(data);
+          setError(null);
+          setLoading(false);
+        })
+        .catch((err) => {
+          const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar preço';
+          setError(errorMessage);
+          setPriceData(null);
+          setLoading(false);
+        });
+      return;
+    }
+
+    const fetchPrice = async (): Promise<PriceData> => {
       try {
         console.log('useStripePrice: Iniciando busca do preço...');
         
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+        
         const { data, error } = await supabase.functions.invoke('get-stripe-price');
+        
+        clearTimeout(timeoutId);
         
         if (error) {
           console.error('useStripePrice: Erro na função:', error);
-          throw error;
+          throw new Error(error.message || 'Erro na função get-stripe-price');
+        }
+        
+        if (!data) {
+          throw new Error('Dados de preço não recebidos');
         }
         
         console.log('useStripePrice: Preço carregado com sucesso:', data);
-        priceCache = data;
+        
+        // Atualizar cache com timestamp
+        priceCache = { data, timestamp: Date.now() };
         cacheError = null;
-        setPriceData(data);
-        setError(null);
+        
+        return data;
       } catch (err) {
         console.error('useStripePrice: Erro ao buscar preço:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar preço';
-        cacheError = errorMessage;
+        
+        let errorMessage = 'Erro ao buscar preço';
+        if (err instanceof Error) {
+          if (err.name === 'AbortError') {
+            errorMessage = 'Timeout na requisição do preço';
+          } else {
+            errorMessage = err.message;
+          }
+        }
+        
+        // Atualizar cache de erro com timestamp
+        cacheError = { error: errorMessage, timestamp: Date.now() };
         priceCache = null;
-        setError(errorMessage);
-        setPriceData(null);
+        
+        throw new Error(errorMessage);
       } finally {
-        setLoading(false);
-        isFetching = false;
-        fetchPromise = null;
+        activeFetchPromise = null;
       }
     };
 
-    fetchPromise = fetchPrice();
+    // Iniciar fetch e armazenar promise ativa
+    activeFetchPromise = fetchPrice();
+    
+    activeFetchPromise
+      .then((data) => {
+        setPriceData(data);
+        setError(null);
+        setLoading(false);
+      })
+      .catch((err) => {
+        const errorMessage = err instanceof Error ? err.message : 'Erro ao buscar preço';
+        setError(errorMessage);
+        setPriceData(null);
+        setLoading(false);
+      });
   }, []);
 
   return { priceData, loading, error };

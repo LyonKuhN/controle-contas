@@ -139,12 +139,13 @@ export const useSupabaseConnectivity = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Test connectivity every 60 seconds (reduced frequency to avoid overwhelming)
+    // Test connectivity every 2 minutes (less frequent to reduce server load)
     const interval = setInterval(() => {
       if (navigator.onLine && !state.isSupabaseConnected && !state.isReconnecting && !isTestingConnection) {
+        console.log('🔄 Teste automático de conectividade...');
         testSupabaseConnection();
       }
-    }, 60000);
+    }, 120000); // 2 minutes
 
     return () => {
       window.removeEventListener('online', handleOnline);

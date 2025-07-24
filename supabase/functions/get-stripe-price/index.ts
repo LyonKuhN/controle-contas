@@ -12,13 +12,30 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  try {
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
+  const logStep = (step: string, details?: any) => {
+    const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
+    console.log(`[GET-STRIPE-PRICE] ${step}${detailsStr}`);
+  };
 
-    const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
+  try {
+    logStep("Function started");
+
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      logStep("ERROR: STRIPE_SECRET_KEY is not set");
+      throw new Error("STRIPE_SECRET_KEY is not set");
+    }
+
+    logStep("Stripe key found, initializing client");
+    const stripe = new Stripe(stripeKey, { 
+      apiVersion: "2023-10-16",
+      timeout: 8000, // 8 second timeout for Stripe API calls
+      maxNetworkRetries: 2 // Retry failed requests
+    });
     
-    // Get the price for our Premium product
+    logStep("Fetching prices from Stripe", { product: "prod_SUz13U5Rif3qEr" });
+    
+    // Get the price for our Premium product with retry logic
     const prices = await stripe.prices.list({
       product: "prod_SUz13U5Rif3qEr",
       active: true,
@@ -26,7 +43,10 @@ serve(async (req) => {
       limit: 1,
     });
 
+    logStep("Stripe API response received", { priceCount: prices.data.length });
+
     if (prices.data.length === 0) {
+      logStep("ERROR: No active price found");
       throw new Error("No active price found for Premium product");
     }
 
@@ -34,20 +54,31 @@ serve(async (req) => {
     const amount = price.unit_amount || 0;
     const currency = price.currency || 'brl';
     
+    logStep("Price data processed", { amount, currency, priceId: price.id });
+    
     // Convert cents to currency units
     const formattedAmount = amount / 100;
 
-    return new Response(JSON.stringify({
+    const responseData = {
       amount: formattedAmount,
       currency: currency,
       formatted: `R$ ${formattedAmount.toFixed(2).replace('.', ',')}`
-    }), {
+    };
+
+    logStep("Sending successful response", responseData);
+
+    return new Response(JSON.stringify(responseData), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
   } catch (error) {
-    console.error("Error fetching price:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logStep("ERROR in get-stripe-price", { message: errorMessage });
+    
+    return new Response(JSON.stringify({ 
+      error: errorMessage,
+      timestamp: new Date().toISOString()
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
     });

@@ -139,22 +139,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Controle para evitar múltiplas verificações simultâneas
+  let isCheckingSubscription = false;
+
   const checkSubscription = async () => {
-    if (!session) return;
+    if (!session || isCheckingSubscription) {
+      console.log('⚠️ Verificação de assinatura cancelada - sem sessão ou já verificando');
+      return;
+    }
     
-    // Prevent multiple simultaneous subscription checks
-    if (subscriptionData && Date.now() - new Date(session.expires_at! * 1000).getTime() > 0) {
+    // Verificar se a sessão não expirou
+    if (session.expires_at && Date.now() >= session.expires_at * 1000) {
       console.log('⚠️ Verificação de assinatura cancelada - sessão expirada');
       return;
     }
     
+    isCheckingSubscription = true;
+    
     try {
       console.log('🔍 Verificando assinatura...');
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
-        },
+        }
       });
+      
+      clearTimeout(timeoutId);
       
       if (error) {
         console.error('❌ Error checking subscription:', error);
@@ -164,7 +178,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('✅ Assinatura verificada:', data);
       setSubscriptionData(data);
     } catch (error) {
-      console.error('❌ Error checking subscription:', error);
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.error('❌ Timeout na verificação de assinatura');
+      } else {
+        console.error('❌ Error checking subscription:', error);
+      }
+    } finally {
+      isCheckingSubscription = false;
     }
   };
 
@@ -182,32 +202,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             
             if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
               console.log('Verificando assinatura automaticamente...');
-              // Use debouncing to prevent multiple simultaneous calls
-              setTimeout(async () => {
-                try {
-                  // Double-check session is still valid
-                  if (!session || Date.now() - new Date(session.expires_at! * 1000).getTime() > 0) {
-                    console.log('⚠️ Sessão expirada, cancelando verificação de assinatura');
-                    return;
-                  }
-
-                  const { data, error } = await supabase.functions.invoke('check-subscription', {
-                    headers: {
-                      Authorization: `Bearer ${session.access_token}`,
-                    },
-                  });
-                  
-                  if (error) {
-                    console.error('Error checking subscription:', error);
-                    return;
-                  }
-                  
-                  console.log('Dados da assinatura atualizados:', data);
-                  setSubscriptionData(data);
-                } catch (error) {
-                  console.error('Error checking subscription:', error);
-                }
-              }, 2000); // Increased delay to reduce concurrency issues
+              // Use debouncing to prevent multiple simultaneous calls - only for new sessions
+              setTimeout(() => {
+                checkSubscription();
+              }, 3000); // Increased delay to ensure stability
             }
           }
         
@@ -232,25 +230,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         await fetchProfile(session.user.id);
         
         console.log('Verificando assinatura para sessão existente...');
-        setTimeout(async () => {
-          try {
-            const { data, error } = await supabase.functions.invoke('check-subscription', {
-              headers: {
-                Authorization: `Bearer ${session.access_token}`,
-              },
-            });
-            
-            if (error) {
-              console.error('Error checking subscription:', error);
-              return;
-            }
-            
-            console.log('Dados da assinatura carregados:', data);
-            setSubscriptionData(data);
-          } catch (error) {
-            console.error('Error checking subscription:', error);
-          }
-        }, 1000);
+        setTimeout(() => {
+          checkSubscription();
+        }, 2000); // Simplified call using the improved checkSubscription function
       }
     });
 
