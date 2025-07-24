@@ -28,44 +28,60 @@ export const useReceitas = () => {
     queryFn: async () => {
       console.log('🔄 useReceitas: Iniciando busca de receitas...');
       
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        console.log('❌ useReceitas: Usuário não autenticado');
-        throw new Error('Usuário não autenticado');
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError) {
+          console.error('❌ useReceitas: Erro de autenticação:', authError);
+          throw new Error(`Erro de autenticação: ${authError.message}`);
+        }
+        
+        if (!user) {
+          console.log('❌ useReceitas: Usuário não autenticado');
+          throw new Error('Usuário não autenticado');
+        }
+
+        console.log('✅ useReceitas: Usuário autenticado:', user.id);
+
+        const { data, error: queryError } = await supabase
+          .from('receitas')
+          .select(`
+            id,
+            descricao,
+            valor,
+            categoria_id,
+            data_recebimento,
+            recebido,
+            observacoes,
+            categoria:categorias(nome, cor)
+          `)
+          .eq('user_id', user.id)
+          .order('data_recebimento', { ascending: true });
+
+        if (queryError) {
+          console.error('❌ useReceitas: Erro na query:', queryError);
+          throw new Error(`Erro na query: ${queryError.message}`);
+        }
+        
+        console.log('✅ useReceitas: Dados carregados:', data?.length || 0, 'receitas');
+        return (data as Receita[]) || [];
+      } catch (err) {
+        console.error('❌ useReceitas: Erro geral:', err);
+        throw err;
       }
-
-      console.log('✅ useReceitas: Usuário autenticado:', user.id);
-
-      const { data, error: queryError } = await supabase
-        .from('receitas')
-        .select(`
-          id,
-          descricao,
-          valor,
-          categoria_id,
-          data_recebimento,
-          recebido,
-          observacoes,
-          categoria:categorias(nome, cor)
-        `)
-        .eq('user_id', user.id)
-        .order('data_recebimento', { ascending: true });
-
-      if (queryError) {
-        console.error('❌ useReceitas: Erro na query:', queryError);
-        throw queryError;
-      }
-      
-      console.log('✅ useReceitas: Dados carregados:', data?.length || 0, 'receitas');
-      return (data as Receita[]) || [];
     },
     enabled: true,
-    retry: 1,
-    retryDelay: 1000,
+    retry: (failureCount, error) => {
+      // Não fazer retry se for erro de autenticação
+      if (error?.message?.includes('autenticação') || error?.message?.includes('Usuário não autenticado')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     staleTime: 2 * 60 * 1000, // 2 minutos
     gcTime: 5 * 60 * 1000, // 5 minutos
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: true,
     refetchOnReconnect: true,
     networkMode: 'online'
   });

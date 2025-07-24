@@ -47,6 +47,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState<string | null>(null);
   const [showDisplayNameModal, setShowDisplayNameModal] = useState(false);
+  
+  // Controle para evitar múltiplas verificações simultâneas
+  const [isCheckingSubscription, setIsCheckingSubscription] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     try {
@@ -139,9 +142,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  // Controle para evitar múltiplas verificações simultâneas
-  let isCheckingSubscription = false;
-
   const checkSubscription = async () => {
     if (!session || isCheckingSubscription) {
       console.log('⚠️ Verificação de assinatura cancelada - sem sessão ou já verificando');
@@ -154,7 +154,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       return;
     }
     
-    isCheckingSubscription = true;
+    setIsCheckingSubscription(true);
     
     try {
       console.log('🔍 Verificando assinatura...');
@@ -184,11 +184,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.error('❌ Error checking subscription:', error);
       }
     } finally {
-      isCheckingSubscription = false;
+      setIsCheckingSubscription(false);
     }
   };
 
   useEffect(() => {
+    console.log('🔧 useAuth: Iniciando configuração de autenticação...');
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
@@ -196,32 +198,42 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         setLoading(false);
         
-          if (session?.user) {
-            // Fetch profile first
-            await fetchProfile(session.user.id);
-            
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-              console.log('Verificando assinatura automaticamente...');
-              // Use debouncing to prevent multiple simultaneous calls - only for new sessions
-              setTimeout(() => {
+        if (session?.user) {
+          // Fetch profile first
+          await fetchProfile(session.user.id);
+          
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            console.log('Verificando assinatura automaticamente...');
+            // Use debouncing to prevent multiple simultaneous calls - only for new sessions
+            setTimeout(() => {
+              if (!isCheckingSubscription) {
                 checkSubscription();
-              }, 3000); // Increased delay to ensure stability
-            }
+              }
+            }, 3000); // Increased delay to ensure stability
           }
+        }
         
         // Clear data when user signs out
         if (event === 'SIGNED_OUT') {
+          console.log('🔄 useAuth: Limpando dados do usuário...');
           setSubscriptionData(null);
           setUserName(null);
           setProfile(null);
           setShowDisplayNameModal(false);
+          setIsCheckingSubscription(false);
         }
       }
     );
 
     // Check existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('Sessão inicial:', session?.user?.email);
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
+      if (error) {
+        console.error('❌ useAuth: Erro ao obter sessão:', error);
+        setLoading(false);
+        return;
+      }
+      
+      console.log('Sessão inicial:', session?.user?.email || 'Nenhuma sessão');
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -231,13 +243,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         
         console.log('Verificando assinatura para sessão existente...');
         setTimeout(() => {
-          checkSubscription();
-        }, 2000); // Simplified call using the improved checkSubscription function
+          if (!isCheckingSubscription) {
+            checkSubscription();
+          }
+        }, 2000);
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, []);
+    return () => {
+      console.log('🔧 useAuth: Limpando subscription...');
+      subscription.unsubscribe();
+    };
+  }, []); // Dependências vazias para evitar loops
 
   // Update userName when profile changes
   useEffect(() => {
