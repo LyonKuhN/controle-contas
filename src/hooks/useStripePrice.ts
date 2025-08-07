@@ -72,7 +72,11 @@ export const useStripePrice = () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
         
-        const { data, error } = await supabase.functions.invoke('get-stripe-price');
+        const { data, error } = await supabase.functions.invoke('get-stripe-price', {
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
         
         clearTimeout(timeoutId);
         
@@ -86,6 +90,12 @@ export const useStripePrice = () => {
         }
         
         console.log('useStripePrice: Preço carregado com sucesso:', data);
+        
+        // Validar estrutura dos dados
+        if (typeof data.amount !== 'number' || !data.currency || !data.formatted) {
+          console.warn('useStripePrice: Dados incompletos recebidos:', data);
+          throw new Error('Dados de preço inválidos');
+        }
         
         // Atualizar cache com timestamp
         priceCache = { data, timestamp: Date.now() };

@@ -258,14 +258,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   // Update userName when profile changes
   useEffect(() => {
+    console.log('🏷️ Atualizando userName:', { 
+      profileDisplayName: profile?.display_name, 
+      userFullName: user?.user_metadata?.full_name,
+      userEmail: user?.email 
+    });
+    
     if (profile?.display_name) {
       setUserName(profile.display_name);
+      console.log('✅ UserName definido pelo profile:', profile.display_name);
     } else if (user?.user_metadata?.full_name) {
       setUserName(user.user_metadata.full_name);
+      console.log('✅ UserName definido pelo metadata:', user.user_metadata.full_name);
     } else if (user?.email) {
       // Fallback to first part of email
       const emailName = user.email.split('@')[0] || '';
-      setUserName(emailName.charAt(0).toUpperCase() + emailName.slice(1));
+      const formattedName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+      setUserName(formattedName);
+      console.log('✅ UserName definido pelo email:', formattedName);
+    } else {
+      setUserName(null);
+      console.log('⚠️ UserName definido como null');
     }
   }, [profile, user]);
 

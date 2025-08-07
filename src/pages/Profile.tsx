@@ -14,8 +14,19 @@ import SubscriptionDialog from '@/components/SubscriptionDialog';
 
 const Profile = () => {
   const { user, signOut, subscriptionData, session, userName, profile, updateProfile } = useAuth();
-  const { priceData } = useStripePrice();
+  const { priceData, loading: priceLoading, error: priceError } = useStripePrice();
   const { toast } = useToast();
+  
+  console.log('Profile: Estado dos dados:', { 
+    userName, 
+    hasProfile: !!profile, 
+    profileDisplayName: profile?.display_name,
+    hasUser: !!user,
+    userEmail: user?.email,
+    priceData,
+    priceLoading,
+    priceError 
+  });
   const [loading, setLoading] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -214,7 +225,11 @@ const Profile = () => {
     }
   };
 
-  const displayPrice = priceData?.formatted || 'R$ 29,90';
+  const displayPrice = priceLoading 
+    ? 'Carregando...' 
+    : priceError 
+      ? 'R$ 29,90' 
+      : priceData?.formatted || 'R$ 29,90';
 
   return (
     <div className="min-h-screen">
