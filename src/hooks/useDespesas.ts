@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface Despesa {
   id: string;
@@ -26,73 +27,55 @@ export interface Despesa {
 export const useDespesas = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user, loading: authLoading } = useAuth();
 
   const { data: despesas = [], isLoading, error } = useQuery({
-    queryKey: ['despesas'],
+    queryKey: ['despesas', user?.id],
     queryFn: async () => {
-      console.log('🔄 useDespesas: Iniciando busca de despesas...');
+      if (!user) {
+        console.log('🚫 useDespesas: Usuário não autenticado');
+        return [];
+      }
+
+      console.log('🔄 useDespesas: Buscando despesas para usuário', user.id);
+
+      const { data, error: queryError } = await supabase
+        .from('despesas')
+        .select(`
+          id,
+          descricao,
+          valor,
+          categoria_id,
+          data_vencimento,
+          pago,
+          data_pagamento,
+          observacoes,
+          tipo,
+          numero_parcelas,
+          valor_total,
+          parcela_atual,
+          is_modelo,
+          categoria:categorias(nome, cor)
+        `)
+        .eq('user_id', user.id)
+        .eq('is_modelo', false)
+        .order('data_vencimento', { ascending: true });
+
+      if (queryError) {
+        console.error('❌ useDespesas: Erro na query:', queryError);
+        throw new Error(`Erro na query: ${queryError.message}`);
+      }
       
-      try {
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) {
-          console.error('❌ useDespesas: Erro de autenticação:', authError);
-          throw new Error(`Erro de autenticação: ${authError.message}`);
-        }
-        
-        if (!user) {
-          console.log('❌ useDespesas: Usuário não autenticado');
-          throw new Error('Usuário não autenticado');
-        }
-
-        console.log('✅ useDespesas: Usuário autenticado:', user.id);
-
-        const { data, error: queryError } = await supabase
-          .from('despesas')
-          .select(`
-            id,
-            descricao,
-            valor,
-            categoria_id,
-            data_vencimento,
-            pago,
-            data_pagamento,
-            observacoes,
-            tipo,
-            numero_parcelas,
-            valor_total,
-            parcela_atual,
-            is_modelo,
-            categoria:categorias(nome, cor)
-          `)
-          .eq('user_id', user.id)
-          .eq('is_modelo', false)
-          .order('data_vencimento', { ascending: true });
-
-        if (queryError) {
-          console.error('❌ useDespesas: Erro na query:', queryError);
-          throw new Error(`Erro na query: ${queryError.message}`);
-        }
-        
-        console.log('✅ useDespesas: Dados carregados:', data?.length || 0, 'despesas');
-        return (data as Despesa[]) || [];
-      } catch (err) {
-        console.error('❌ useDespesas: Erro geral:', err);
-        throw err;
-      }
+      console.log('✅ useDespesas: Dados carregados:', data?.length || 0, 'despesas');
+      return (data as Despesa[]) || [];
     },
-    enabled: true,
-    retry: (failureCount, error) => {
-      // Não fazer retry se for erro de autenticação
-      if (error?.message?.includes('autenticação') || error?.message?.includes('Usuário não autenticado')) {
-        return false;
-      }
-      return failureCount < 2;
-    },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    staleTime: 2 * 60 * 1000, // 2 minutos
-    gcTime: 5 * 60 * 1000, // 5 minutos
+    enabled: !!user && !authLoading,
+    retry: 1,
+    retryDelay: 3000,
+    staleTime: 5 * 60 * 1000, // 5 minutos
+    gcTime: 10 * 60 * 1000, // 10 minutos
     refetchOnWindowFocus: false,
-    refetchOnMount: true,
+    refetchOnMount: false,
     refetchOnReconnect: true,
     networkMode: 'online'
   });

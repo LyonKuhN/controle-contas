@@ -123,7 +123,10 @@ export const useSupabaseConnectivity = () => {
     const handleOnline = () => {
       console.log('🌐 Conexão de internet restaurada');
       setState(prev => ({ ...prev, isOnline: true }));
-      testSupabaseConnection();
+      // Só testa se realmente estava desconectado
+      if (!state.isSupabaseConnected) {
+        testSupabaseConnection();
+      }
     };
 
     const handleOffline = () => {
@@ -139,13 +142,13 @@ export const useSupabaseConnectivity = () => {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Test connectivity every 2 minutes (less frequent to reduce server load)
+    // Test connectivity every 5 minutes (reduced frequency)
     const interval = setInterval(() => {
       if (navigator.onLine && !state.isSupabaseConnected && !state.isReconnecting && !isTestingConnection) {
         console.log('🔄 Teste automático de conectividade...');
         testSupabaseConnection();
       }
-    }, 120000); // 2 minutes
+    }, 300000); // 5 minutes
 
     return () => {
       window.removeEventListener('online', handleOnline);
