@@ -58,13 +58,13 @@ export const useReceitas = () => {
       console.log('✅ useReceitas: Dados carregados:', data?.length || 0, 'receitas');
       return (data as Receita[]) || [];
     },
-    enabled: !!user && !authLoading,
-    retry: 1,
-    retryDelay: 3000,
-    staleTime: 5 * 60 * 1000, // 5 minutos
-    gcTime: 10 * 60 * 1000, // 10 minutos
+    enabled: !!user, // Simplifiquei - só precisa do user
+    retry: 2,
+    retryDelay: (attemptIndex) => 1000 * Math.pow(2, attemptIndex), // backoff exponencial
+    staleTime: 2 * 60 * 1000, // 2 minutos
+    gcTime: 5 * 60 * 1000, // 5 minutos
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: true, // Mudei para true para sempre buscar quando montar
     refetchOnReconnect: true,
     networkMode: 'online'
   });

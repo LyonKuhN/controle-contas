@@ -1,5 +1,5 @@
 
-import { useState, useEffect, createContext, useContext } from 'react';
+import { useState, useEffect, createContext, useContext, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -373,6 +373,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await supabase.auth.signOut();
   };
 
+  // Force refresh profile data
+  const refetchProfile = useCallback(async () => {
+    if (user) {
+      console.log('🔄 Forçando refresh do profile...');
+      await fetchProfile(user.id);
+    }
+  }, [user]);
+
   return (
     <AuthContext.Provider value={{
       user,
@@ -389,7 +397,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setShowDisplayNameModal,
       createProfile,
       updateProfile,
-      refetchProfile: () => user ? fetchProfile(user.id) : Promise.resolve()
+      refetchProfile
     }}>
       {children}
     </AuthContext.Provider>

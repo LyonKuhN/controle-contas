@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import SubscriptionDialog from '@/components/SubscriptionDialog';
 
 const Profile = () => {
-  const { user, signOut, subscriptionData, session, userName, profile, updateProfile } = useAuth();
+  const { user, signOut, subscriptionData, session, userName, profile, updateProfile, refetchProfile } = useAuth();
   const { priceData, loading: priceLoading, error: priceError, refreshPrice } = useStripePrice();
   const { toast } = useToast();
   
@@ -260,14 +260,24 @@ const Profile = () => {
                 <h2 className="text-xl font-semibold">Status da Assinatura</h2>
               </div>
               {priceError && (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={refreshPrice}
-                  className="ml-2"
-                >
-                  Tentar Novamente
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={refreshPrice}
+                    className="ml-2"
+                  >
+                    Atualizar Preço
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={refetchProfile}
+                    className="ml-2"
+                  >
+                    Atualizar Perfil
+                  </Button>
+                </div>
               )}
             </div>
             
