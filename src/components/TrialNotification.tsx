@@ -58,6 +58,8 @@ const TrialNotification = () => {
     
     setLoading(true);
     try {
+      console.log('🛒 Iniciando checkout Stripe...');
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -69,10 +71,17 @@ const TrialNotification = () => {
       }
       
       if (data?.url) {
-        window.open(data.url, '_blank');
+        console.log('🔗 Redirecionando para Stripe:', data.url);
+        
+        // Salvar estado atual antes de ir para Stripe
+        sessionStorage.setItem('stripe_checkout_active', 'true');
+        sessionStorage.setItem('checkout_timestamp', Date.now().toString());
+        
+        // Usar window.location.href em vez de window.open
+        window.location.href = data.url;
       }
     } catch (error) {
-      console.error('Error creating checkout:', error);
+      console.error('❌ Erro no checkout:', error);
       toast({
         title: "Erro",
         description: "Erro ao iniciar processo de assinatura. Tente novamente.",

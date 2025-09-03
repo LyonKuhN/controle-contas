@@ -48,6 +48,83 @@ const Profile = () => {
     }
   }, [profile]);
 
+  // Detectar retorno do Stripe pelos parâmetros da URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const canceled = urlParams.get('canceled');
+    
+    if (success === 'true') {
+      console.log('✅ Retorno do Stripe com sucesso detectado');
+      toast({
+        title: "Pagamento processado!",
+        description: "Verificando status da assinatura...",
+      });
+      
+      // Limpar URL e força refresh dos dados após sucesso
+      window.history.replaceState({}, document.title, window.location.pathname);
+      setTimeout(() => {
+        window.location.reload();
+      }, 2000);
+    }
+    
+    if (canceled === 'true') {
+      console.log('❌ Checkout cancelado detectado');
+      toast({
+        title: "Checkout cancelado",
+        description: "O processo de pagamento foi cancelado.",
+        variant: "destructive"
+      });
+      
+      // Limpar URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [toast]);
+
+  // Melhorar detecção de retorno por visibilidade
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const wasCheckoutActive = sessionStorage.getItem('stripe_checkout_active');
+        const checkoutTimestamp = sessionStorage.getItem('checkout_timestamp');
+        
+        if (wasCheckoutActive && checkoutTimestamp) {
+          const timeDiff = Date.now() - parseInt(checkoutTimestamp);
+          
+          // Se passou mais de 30 segundos, assumir que foi para Stripe
+          if (timeDiff > 30000) {
+            console.log('🔄 Detectado retorno do Stripe, atualizando dados...');
+            
+            // Limpar flags
+            sessionStorage.removeItem('stripe_checkout_active');
+            sessionStorage.removeItem('checkout_timestamp');
+            
+            // Força refresh de todos os dados
+            setTimeout(() => {
+              console.log('🔄 Recarregando página para atualizar dados...');
+              window.location.reload();
+            }, 1000);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Limpar flags antigas se existirem
+  useEffect(() => {
+    const checkoutTimestamp = sessionStorage.getItem('checkout_timestamp');
+    if (checkoutTimestamp) {
+      const timeDiff = Date.now() - parseInt(checkoutTimestamp);
+      if (timeDiff > 300000) { // 5 minutos
+        sessionStorage.removeItem('stripe_checkout_active');
+        sessionStorage.removeItem('checkout_timestamp');
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const calculateTrialTime = () => {
       if (subscriptionData?.subscribed) {
@@ -201,6 +278,8 @@ const Profile = () => {
     
     setLoading(true);
     try {
+      console.log('🛒 Iniciando checkout Stripe...');
+      
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         headers: {
           Authorization: `Bearer ${session.access_token}`,
@@ -212,10 +291,17 @@ const Profile = () => {
       }
       
       if (data?.url) {
-        window.open(data.url, '_blank');
+        console.log('🔗 Redirecionando para Stripe:', data.url);
+        
+        // Salvar estado atual antes de ir para Stripe
+        sessionStorage.setItem('stripe_checkout_active', 'true');
+        sessionStorage.setItem('checkout_timestamp', Date.now().toString());
+        
+        // Usar window.location.href em vez de window.open para evitar problemas de sessão
+        window.location.href = data.url;
       }
     } catch (error) {
-      console.error('Error creating checkout:', error);
+      console.error('❌ Erro no checkout:', error);
       toast({
         title: "Erro",
         description: "Erro ao iniciar processo de assinatura. Tente novamente.",

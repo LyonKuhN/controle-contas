@@ -61,8 +61,8 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.get("origin")}/?success=true`,
-      cancel_url: `${req.headers.get("origin")}/?canceled=true`,
+      success_url: `${req.headers.get("origin")}/profile?success=true`,
+      cancel_url: `${req.headers.get("origin")}/profile?canceled=true`,
       allow_promotion_codes: true,
       metadata: {
         user_id: user.id,
