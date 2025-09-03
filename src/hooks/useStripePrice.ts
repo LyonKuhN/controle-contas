@@ -75,6 +75,7 @@ export const useStripePrice = () => {
       priceCache = { data, timestamp: Date.now() };
       setPriceData(data);
       setError(null);
+      setLoading(false); // Loading concluído com sucesso
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -91,21 +92,22 @@ export const useStripePrice = () => {
         return; // Não definir loading = false ainda
       }
       
-      // Fallback para valor padrão se todas as tentativas falharam
-      console.log('useStripePrice: Usando fallback');
-      const fallbackData = {
-        amount: 29.9,
-        currency: 'brl',
-        formatted: 'R$ 29,90'
-      };
-      
-      setPriceData(fallbackData);
+      // Não usar fallback - manter carregando e tentar novamente em 30 segundos
+      console.log('useStripePrice: Todas as tentativas falharam, tentando novamente em 30s');
       setError(errorMessage);
+      // Manter loading = true para mostrar que está tentando novamente
       
-    } finally {
-      setLoading(false);
+      // Tentar novamente em 30 segundos
+      setTimeout(() => {
+        if (!priceData) { // Só tenta novamente se ainda não tem dados
+          console.log('useStripePrice: Retry automático após falha');
+          fetchPrice(0);
+        }
+      }, 30000);
+      return; // Não chegar no finally para manter loading = true
+      
     }
-  }, [loading]);
+  }, []);
 
   // Função para refresh manual
   const refreshPrice = useCallback(() => {
