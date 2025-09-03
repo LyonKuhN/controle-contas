@@ -29,8 +29,8 @@ serve(async (req) => {
     logStep("Stripe key found, initializing client");
     const stripe = new Stripe(stripeKey, { 
       apiVersion: "2023-10-16",
-      timeout: 8000, // 8 second timeout for Stripe API calls
-      maxNetworkRetries: 2 // Retry failed requests
+      timeout: 6000, // Reduzido para 6 segundos para ficar dentro do timeout do cliente
+      maxNetworkRetries: 1 // Reduzido para 1 retry para ser mais rápido
     });
     
     logStep("Fetching prices from Stripe", { product: "prod_SUz13U5Rif3qEr" });

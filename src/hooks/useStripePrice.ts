@@ -10,6 +10,9 @@ interface PriceData {
 // Cache global para evitar múltiplas requisições
 let priceCache: { data: PriceData; timestamp: number } | null = null;
 
+// Cache para evitar múltiplas chamadas simultâneas
+let isInvoking = false;
+
 export const useStripePrice = () => {
   const [priceData, setPriceData] = useState<PriceData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -19,7 +22,7 @@ export const useStripePrice = () => {
     const MAX_RETRIES = 2;
     
     // Evitar múltiplas chamadas simultâneas
-    if (loading) {
+    if (loading || isInvoking) {
       console.log('useStripePrice: Já está carregando, ignorando nova chamada');
       return;
     }
@@ -36,18 +39,19 @@ export const useStripePrice = () => {
     console.log(`useStripePrice: Iniciando busca ${retryCount + 1}/${MAX_RETRIES + 1}`);
     setLoading(true);
     setError(null);
+    isInvoking = true;
     
     try {
-      // Timeout de 6 segundos
+      // Timeout aumentado para 12s para lidar com cold starts
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 6000);
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
       
       console.log('useStripePrice: Chamando edge function...');
       
       // Usar Promise.race para timeout manual já que Supabase não suporta signal
       const fetchPromise = supabase.functions.invoke('get-stripe-price');
       const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout: 6 segundos')), 6000)
+        setTimeout(() => reject(new Error('Timeout: 12 segundos')), 12000)
       );
       
       const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
@@ -106,6 +110,8 @@ export const useStripePrice = () => {
       }, 30000);
       return; // Não chegar no finally para manter loading = true
       
+    } finally {
+      isInvoking = false;
     }
   }, []);
 
