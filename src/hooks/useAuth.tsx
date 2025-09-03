@@ -153,6 +153,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('⚠️ Verificação de assinatura cancelada - sessão expirada');
       return;
     }
+
+    // Verificar se é usuário admin
+    if (user?.email && (user.email === 'empresa@admin.local' || user.email.endsWith('@admin.local'))) {
+      console.log('👑 Usuário admin detectado, aplicando assinatura permanente');
+      setSubscriptionData({
+        subscribed: true,
+        subscription_tier: 'Enterprise',
+        subscription_end: '2099-12-31T23:59:59Z'
+      });
+      return;
+    }
     
     setIsCheckingSubscription(true);
     
@@ -160,7 +171,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('🔍 Verificando assinatura...');
       
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout (reduzido)
       
       const { data, error } = await supabase.functions.invoke('check-subscription', {
         headers: {
@@ -172,6 +183,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       
       if (error) {
         console.error('❌ Error checking subscription:', error);
+        // Retry após 3 segundos em caso de erro
+        setTimeout(() => {
+          if (!isCheckingSubscription && session) {
+            checkSubscription();
+          }
+        }, 3000);
         return;
       }
       
@@ -183,6 +200,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         console.error('❌ Error checking subscription:', error);
       }
+      
+      // Retry após 5 segundos em caso de timeout ou erro
+      setTimeout(() => {
+        if (!isCheckingSubscription && session) {
+          console.log('🔄 Tentativa automática de verificação de assinatura...');
+          checkSubscription();
+        }
+      }, 5000);
     } finally {
       setIsCheckingSubscription(false);
     }

@@ -19,6 +19,7 @@ import Receitas from "./pages/Receitas";
 import ControleContas from "./pages/ControleContas";
 import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
+import AdminAuth from "./pages/AdminAuth";
 import { useAuth } from "@/hooks/useAuth";
 
 const queryClient = new QueryClient();
@@ -72,6 +73,7 @@ const AppContent = () => {
             </SubscriptionGuard>
           </ProtectedRoute>
         } />
+        <Route path="/admin" element={<AdminAuth />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <TrialExpiredOverlay />

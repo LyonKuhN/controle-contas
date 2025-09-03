@@ -75,7 +75,8 @@ export const useStripePrice = () => {
         const { data, error } = await supabase.functions.invoke('get-stripe-price', {
           headers: {
             'Content-Type': 'application/json',
-          }
+          },
+          body: {} // Adicionar body vazio para garantir compatibilidade
         });
         
         clearTimeout(timeoutId);

@@ -23,6 +23,13 @@ const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
     }
 
     const checkTrialStatus = () => {
+      // Check if user is admin (bypass all restrictions)
+      if (user.email && (user.email === 'empresa@admin.local' || user.email.endsWith('@admin.local'))) {
+        console.log('👑 Usuário admin detectado, bypassing subscription guard');
+        setIsTrialExpired(false);
+        return;
+      }
+      
       // If user has active subscription, allow access
       if (subscriptionData?.subscribed) {
         setIsTrialExpired(false);
