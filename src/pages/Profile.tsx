@@ -228,9 +228,7 @@ const Profile = () => {
 
   const displayPrice = priceLoading 
     ? 'Carregando...' 
-    : priceError 
-      ? 'R$ 29,90' 
-      : priceData?.formatted || 'R$ 29,90';
+    : priceData?.formatted || 'R$ --,--';
 
   return (
     <div className="min-h-screen">

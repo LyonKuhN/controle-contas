@@ -53,30 +53,68 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const fetchProfile = async (userId: string) => {
     try {
-      console.log('Fetching profile for user:', userId);
-      const { data, error } = await supabase
+      console.log('🔍 Fetchando profile para user:', userId);
+      
+      // Primeiro, tentar buscar profile existente
+      const { data: existingProfile, error: fetchError } = await supabase
         .from('profiles')
         .select('*')
         .eq('user_id', userId)
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching profile:', error);
+      if (fetchError) {
+        console.error('❌ Erro ao buscar profile:', fetchError);
+        // Se der erro, tentar criar profile automaticamente
+        console.log('🔄 Tentando criar profile automaticamente...');
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert([{
+            user_id: userId,
+            display_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuário'
+          }])
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('❌ Erro ao criar profile:', createError);
+          return;
+        }
+
+        console.log('✅ Profile criado automaticamente:', newProfile);
+        setProfile(newProfile);
+        setShowDisplayNameModal(false);
         return;
       }
 
-      console.log('Profile fetched:', data);
-      setProfile(data);
-      
-      // If user is logged in but has no profile, show the modal
-      if (!data) {
-        console.log('No profile found, showing display name modal');
-        setShowDisplayNameModal(true);
+      if (existingProfile) {
+        console.log('✅ Profile encontrado:', existingProfile);
+        setProfile(existingProfile);
+        setShowDisplayNameModal(false);
       } else {
+        console.log('⚠️ Nenhum profile encontrado, criando automaticamente...');
+        // Criar profile automaticamente se não existir
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert([{
+            user_id: userId,
+            display_name: user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Usuário'
+          }])
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('❌ Erro ao criar profile automaticamente:', createError);
+          setShowDisplayNameModal(true);
+          return;
+        }
+
+        console.log('✅ Profile criado automaticamente:', newProfile);
+        setProfile(newProfile);
         setShowDisplayNameModal(false);
       }
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('❌ Erro geral ao processar profile:', error);
+      setShowDisplayNameModal(true);
     }
   };
 

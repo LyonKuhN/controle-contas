@@ -19,11 +19,11 @@ export const useStripePrice = () => {
   const [error, setError] = useState<string | null>(null);
 
   const fetchPrice = useCallback(async (retryCount = 0) => {
-    const MAX_RETRIES = 2;
+    const MAX_RETRIES = 1;
     
     // Evitar múltiplas chamadas simultâneas
     if (loading || isInvoking) {
-      console.log('useStripePrice: Já está carregando, ignorando nova chamada');
+      console.log('useStripePrice: Já está processando, ignorando');
       return;
     }
 
@@ -31,7 +31,6 @@ export const useStripePrice = () => {
     if (priceCache && Date.now() - priceCache.timestamp < 300000) {
       console.log('useStripePrice: Usando cache válido');
       setPriceData(priceCache.data);
-      setLoading(false);
       setError(null);
       return;
     }
@@ -42,22 +41,10 @@ export const useStripePrice = () => {
     isInvoking = true;
     
     try {
-      // Timeout aumentado para 12s para lidar com cold starts
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
-      
+      // Timeout bem maior para lidar com cold starts
       console.log('useStripePrice: Chamando edge function...');
       
-      // Usar Promise.race para timeout manual já que Supabase não suporta signal
-      const fetchPromise = supabase.functions.invoke('get-stripe-price');
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout: 12 segundos')), 12000)
-      );
-      
-      const result = await Promise.race([fetchPromise, timeoutPromise]) as any;
-      const { data, error } = result;
-      
-      clearTimeout(timeoutId);
+      const { data, error } = await supabase.functions.invoke('get-stripe-price');
       
       if (error) {
         throw new Error(`Edge function error: ${error.message || 'Unknown error'}`);
@@ -79,41 +66,34 @@ export const useStripePrice = () => {
       priceCache = { data, timestamp: Date.now() };
       setPriceData(data);
       setError(null);
-      setLoading(false); // Loading concluído com sucesso
       
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       console.error('useStripePrice: Erro:', errorMessage);
       
       // Retry logic apenas para timeouts ou network errors
-      if (retryCount < MAX_RETRIES && (errorMessage.includes('Timeout') || errorMessage.includes('fetch') || errorMessage.includes('AbortError'))) {
-        const delay = Math.min(1000 * Math.pow(2, retryCount), 3000); // 1s, 2s, 3s max
+      if (retryCount < MAX_RETRIES && (errorMessage.includes('fetch') || errorMessage.includes('timeout') || errorMessage.includes('network'))) {
+        const delay = 2000; // 2 segundos
         console.log(`useStripePrice: Retry em ${delay}ms`);
         
         setTimeout(() => {
+          isInvoking = false;
           fetchPrice(retryCount + 1);
         }, delay);
         return; // Não definir loading = false ainda
       }
       
-      // Não usar fallback - manter carregando e tentar novamente em 30 segundos
-      console.log('useStripePrice: Todas as tentativas falharam, tentando novamente em 30s');
+      // Após todas as tentativas falharem, continuar com loading para tentar novamente
+      console.log('useStripePrice: Todas as tentativas falharam, mantendo loading ativo');
       setError(errorMessage);
-      // Manter loading = true para mostrar que está tentando novamente
-      
-      // Tentar novamente em 30 segundos
-      setTimeout(() => {
-        if (!priceData) { // Só tenta novamente se ainda não tem dados
-          console.log('useStripePrice: Retry automático após falha');
-          fetchPrice(0);
-        }
-      }, 30000);
-      return; // Não chegar no finally para manter loading = true
       
     } finally {
+      if (priceData || retryCount >= MAX_RETRIES) {
+        setLoading(false);
+      }
       isInvoking = false;
     }
-  }, []);
+  }, [loading]);
 
   // Função para refresh manual
   const refreshPrice = useCallback(() => {
@@ -134,13 +114,13 @@ export const useStripePrice = () => {
       return;
     }
     
-    // Pequeno delay para evitar chamadas simultâneas na inicialização
+    // Delay pequeno para evitar chamadas simultâneas
     const timer = setTimeout(() => {
       fetchPrice(0);
-    }, 200);
+    }, 100);
     
     return () => clearTimeout(timer);
-  }, []); // Dependências vazias - executar apenas uma vez
+  }, [fetchPrice]);
 
   return { 
     priceData, 
