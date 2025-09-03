@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useStripePrice } from '@/hooks/useStripePrice';
+import { DebugPanel } from '@/components/DebugPanel';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,7 +15,7 @@ import SubscriptionDialog from '@/components/SubscriptionDialog';
 
 const Profile = () => {
   const { user, signOut, subscriptionData, session, userName, profile, updateProfile } = useAuth();
-  const { priceData, loading: priceLoading, error: priceError } = useStripePrice();
+  const { priceData, loading: priceLoading, error: priceError, refreshPrice } = useStripePrice();
   const { toast } = useToast();
   
   console.log('Profile: Estado dos dados:', { 
@@ -255,9 +256,21 @@ const Profile = () => {
 
           {/* Subscription Status Card */}
           <Card className="p-6 border-primary/20 bg-gradient-to-r from-primary/10 to-accent/10">
-            <div className="flex items-center gap-3 mb-4">
-              <Clock className="w-5 h-5 text-primary" />
-              <h2 className="text-xl font-semibold">Status da Assinatura</h2>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-primary" />
+                <h2 className="text-xl font-semibold">Status da Assinatura</h2>
+              </div>
+              {priceError && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={refreshPrice}
+                  className="ml-2"
+                >
+                  Tentar Novamente
+                </Button>
+              )}
             </div>
             
             {subscriptionData?.subscribed ? (
@@ -481,6 +494,9 @@ const Profile = () => {
         isOpen={showSubscriptionDialog} 
         onClose={() => setShowSubscriptionDialog(false)} 
       />
+      
+      {/* Debug Panel - Remove in production */}
+      <DebugPanel />
     </div>
   );
 };
