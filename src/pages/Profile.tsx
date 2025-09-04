@@ -55,10 +55,10 @@ const Profile = () => {
     const canceled = urlParams.get('canceled');
     
     if (success === 'true') {
-      console.log('✅ Retorno do Stripe com sucesso detectado');
+      console.log('✅ Retorno do Stripe com sucesso detectado - FORÇANDO RELOAD COMPLETO');
       toast({
         title: "Pagamento processado!",
-        description: "Verificando status da assinatura...",
+        description: "Atualizando seus dados...",
       });
       
       // Limpar URL e limpar flags do sessionStorage
@@ -66,19 +66,18 @@ const Profile = () => {
       sessionStorage.removeItem('stripe_checkout_active');
       sessionStorage.removeItem('checkout_timestamp');
       
-      // Recarregar dados em vez de reload completo
-      setTimeout(async () => {
-        console.log('🔄 Recarregando dados após sucesso no Stripe...');
-        await refetchProfile();
-        refreshPrice();
-      }, 1000);
+      // FORÇA RELOAD COMPLETO após sucesso
+      setTimeout(() => {
+        console.log('🔄 RELOAD COMPLETO após sucesso no Stripe');
+        window.location.reload();
+      }, 2000);
     }
     
     if (canceled === 'true') {
-      console.log('❌ Checkout cancelado detectado - RECARREGANDO DADOS');
+      console.log('❌ Checkout CANCELADO detectado - FORÇANDO RELOAD COMPLETO');
       toast({
         title: "Checkout cancelado",
-        description: "O processo foi cancelado. Recarregando seus dados...",
+        description: "Recarregando página para restaurar seus dados...",
         variant: "destructive"
       });
       
@@ -87,16 +86,15 @@ const Profile = () => {
       sessionStorage.removeItem('stripe_checkout_active');
       sessionStorage.removeItem('checkout_timestamp');
       
-      // CRÍTICO: Recarregar dados mesmo quando cancelado
-      setTimeout(async () => {
-        console.log('🔄 Recarregando dados após cancelamento no Stripe...');
-        await refetchProfile();
-        refreshPrice();
-      }, 1000);
+      // FORÇA RELOAD COMPLETO mesmo quando cancelado
+      setTimeout(() => {
+        console.log('🔄 RELOAD COMPLETO após cancelamento no Stripe');
+        window.location.reload();
+      }, 2000);
     }
-  }, [toast, refetchProfile, refreshPrice]);
+  }, [toast]);
 
-  // Detecção de retorno por visibilidade (backup para casos sem URL params)
+  // Sistema de recuperação robusto após Stripe
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -110,20 +108,25 @@ const Profile = () => {
         if (wasCheckoutActive && checkoutTimestamp && !hasStripeParams) {
           const timeDiff = Date.now() - parseInt(checkoutTimestamp);
           
-          // Se passou mais de 30 segundos, assumir que voltou do Stripe
-          if (timeDiff > 30000) {
-            console.log('🔄 Detectado retorno silencioso do Stripe via visibilidade...');
+          // Se passou mais de 10 segundos, assumir que voltou do Stripe
+          if (timeDiff > 10000) {
+            console.log('🔄 RETORNO SILENCIOSO do Stripe detectado - FORÇANDO RELOAD');
             
             // Limpar flags
             sessionStorage.removeItem('stripe_checkout_active');
             sessionStorage.removeItem('checkout_timestamp');
             
-            // Recarregar dados em vez de reload completo
-            setTimeout(async () => {
-              console.log('🔄 Recarregando dados após retorno silencioso...');
-              await refetchProfile();
-              refreshPrice();
-            }, 1000);
+            // Mostrar toast informativo
+            toast({
+              title: "Detectado retorno do pagamento",
+              description: "Recarregando página para atualizar dados...",
+            });
+            
+            // FORÇA RELOAD COMPLETO
+            setTimeout(() => {
+              console.log('🔄 RELOAD COMPLETO por retorno silencioso');
+              window.location.reload();
+            }, 1500);
           }
         }
       }
@@ -131,7 +134,7 @@ const Profile = () => {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [refetchProfile, refreshPrice]);
+  }, [toast]);
 
   // Limpar flags antigas se existirem
   useEffect(() => {
