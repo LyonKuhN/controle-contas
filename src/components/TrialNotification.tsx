@@ -113,12 +113,12 @@ const TrialNotification = () => {
           </p>
           <Button 
             onClick={handleSubscribe}
-            disabled={loading}
-            className="bg-black text-white hover:bg-gray-800 w-full"
+            disabled={true}
+            className="bg-gray-400 text-gray-700 cursor-not-allowed w-full"
             size="sm"
           >
             <Crown className="w-4 h-4 mr-2" />
-            {loading ? 'Processando...' : `Assinar ${displayPrice}/mês`}
+            Temporariamente Indisponível
           </Button>
         </div>
       </Card>
@@ -143,12 +143,12 @@ const TrialNotification = () => {
         </div>
         <Button 
           onClick={handleSubscribe}
-          disabled={loading}
-          className="bg-black text-white hover:bg-gray-800"
+          disabled={true}
+          className="bg-gray-400 text-gray-700 cursor-not-allowed"
           size="sm"
         >
           <Crown className="w-4 h-4 mr-2" />
-          {loading ? 'Processando...' : `Assinar ${displayPrice}/mês`}
+          Temporariamente Indisponível
         </Button>
       </div>
     </Card>
