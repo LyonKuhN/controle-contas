@@ -97,10 +97,20 @@ export const useStripePrice = () => {
 
   // Função para refresh manual
   const refreshPrice = useCallback(() => {
-    console.log('useStripePrice: Refresh manual solicitado');
-    priceCache = null; // Limpar cache
+    console.log('useStripePrice: Refresh manual solicitado - LIMPANDO CACHE');
+    
+    // CRÍTICO: Resetar completamente o estado
+    priceCache = null;
+    isInvoking = false;
+    setPriceData(null);
+    setLoading(false);
     setError(null);
-    fetchPrice(0);
+    
+    // Forçar nova busca imediata
+    setTimeout(() => {
+      console.log('useStripePrice: Iniciando nova busca após reset');
+      fetchPrice(0);
+    }, 100);
   }, [fetchPrice]);
 
   // Inicialização apenas uma vez
