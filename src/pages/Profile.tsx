@@ -61,48 +61,68 @@ const Profile = () => {
         description: "Verificando status da assinatura...",
       });
       
-      // Limpar URL e força refresh dos dados após sucesso
+      // Limpar URL e limpar flags do sessionStorage
       window.history.replaceState({}, document.title, window.location.pathname);
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
+      sessionStorage.removeItem('stripe_checkout_active');
+      sessionStorage.removeItem('checkout_timestamp');
+      
+      // Recarregar dados em vez de reload completo
+      setTimeout(async () => {
+        console.log('🔄 Recarregando dados após sucesso no Stripe...');
+        await refetchProfile();
+        refreshPrice();
+      }, 1000);
     }
     
     if (canceled === 'true') {
-      console.log('❌ Checkout cancelado detectado');
+      console.log('❌ Checkout cancelado detectado - RECARREGANDO DADOS');
       toast({
         title: "Checkout cancelado",
-        description: "O processo de pagamento foi cancelado.",
+        description: "O processo foi cancelado. Recarregando seus dados...",
         variant: "destructive"
       });
       
-      // Limpar URL
+      // Limpar URL e limpar flags do sessionStorage
       window.history.replaceState({}, document.title, window.location.pathname);
+      sessionStorage.removeItem('stripe_checkout_active');
+      sessionStorage.removeItem('checkout_timestamp');
+      
+      // CRÍTICO: Recarregar dados mesmo quando cancelado
+      setTimeout(async () => {
+        console.log('🔄 Recarregando dados após cancelamento no Stripe...');
+        await refetchProfile();
+        refreshPrice();
+      }, 1000);
     }
-  }, [toast]);
+  }, [toast, refetchProfile, refreshPrice]);
 
-  // Melhorar detecção de retorno por visibilidade
+  // Detecção de retorno por visibilidade (backup para casos sem URL params)
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         const wasCheckoutActive = sessionStorage.getItem('stripe_checkout_active');
         const checkoutTimestamp = sessionStorage.getItem('checkout_timestamp');
         
-        if (wasCheckoutActive && checkoutTimestamp) {
+        // Só usar este método se não houver parâmetros de URL (evitar conflito)
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasStripeParams = urlParams.has('success') || urlParams.has('canceled');
+        
+        if (wasCheckoutActive && checkoutTimestamp && !hasStripeParams) {
           const timeDiff = Date.now() - parseInt(checkoutTimestamp);
           
-          // Se passou mais de 30 segundos, assumir que foi para Stripe
+          // Se passou mais de 30 segundos, assumir que voltou do Stripe
           if (timeDiff > 30000) {
-            console.log('🔄 Detectado retorno do Stripe, atualizando dados...');
+            console.log('🔄 Detectado retorno silencioso do Stripe via visibilidade...');
             
             // Limpar flags
             sessionStorage.removeItem('stripe_checkout_active');
             sessionStorage.removeItem('checkout_timestamp');
             
-            // Força refresh de todos os dados
-            setTimeout(() => {
-              console.log('🔄 Recarregando página para atualizar dados...');
-              window.location.reload();
+            // Recarregar dados em vez de reload completo
+            setTimeout(async () => {
+              console.log('🔄 Recarregando dados após retorno silencioso...');
+              await refetchProfile();
+              refreshPrice();
             }, 1000);
           }
         }
@@ -111,7 +131,7 @@ const Profile = () => {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, []);
+  }, [refetchProfile, refreshPrice]);
 
   // Limpar flags antigas se existirem
   useEffect(() => {
