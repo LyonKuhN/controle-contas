@@ -28,7 +28,8 @@ const SubscriptionGuard = ({ children }: SubscriptionGuardProps) => {
         user.email === 'empresa@admin.local' || 
         user.email.endsWith('@admin.local') ||
         user.email === 'hlyon1311@gmail.com' ||
-        user.email === 'jcestacionamentovideira@gmail.com'
+        user.email === 'jcestacionamentovideira@gmail.com' ||
+        user.email === 'heriklyon1311@gmail.com'
       )) {
         console.log('👑 Usuário admin detectado, bypassing subscription guard');
         setIsTrialExpired(false);
