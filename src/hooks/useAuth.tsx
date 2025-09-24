@@ -257,62 +257,88 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
-        setSession(session);
-        setUser(session?.user ?? null);
         
-        if (session?.user) {
-          // Fetch profile first before setting loading to false
-          await fetchProfile(session.user.id);
-          setLoading(false);
-          
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-            console.log('Verificando assinatura automaticamente...');
-            // Use debouncing to prevent multiple simultaneous calls - only for new sessions
-            setTimeout(() => {
-              if (!isCheckingSubscription) {
-                checkSubscription();
-              }
-            }, 3000); // Increased delay to ensure stability
-          }
-        } else {
-          setLoading(false);
-        }
-        
-        // Clear data when user signs out
-        if (event === 'SIGNED_OUT') {
+        // Handle auth errors - clear corrupted tokens
+        if (event === 'SIGNED_OUT' || !session) {
           console.log('🔄 useAuth: Limpando dados do usuário...');
+          setSession(null);
+          setUser(null);
           setSubscriptionData(null);
           setUserName(null);
           setProfile(null);
           setShowDisplayNameModal(false);
           setIsCheckingSubscription(false);
+          setLoading(false);
+          return;
+        }
+        
+        if (session?.user) {
+          setSession(session);
+          setUser(session.user);
+          
+          try {
+            // Fetch profile first before setting loading to false
+            await fetchProfile(session.user.id);
+            setLoading(false);
+            
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+              console.log('Verificando assinatura automaticamente...');
+              // Use debouncing to prevent multiple simultaneous calls - only for new sessions
+              setTimeout(() => {
+                if (!isCheckingSubscription) {
+                  checkSubscription();
+                }
+              }, 3000); // Increased delay to ensure stability
+            }
+          } catch (error) {
+            console.error('❌ Erro ao buscar profile:', error);
+            setLoading(false);
+          }
+        } else {
+          setLoading(false);
         }
       }
     );
 
-    // Check existing session
+    // Check existing session with error handling for corrupted tokens
     supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
         console.error('❌ useAuth: Erro ao obter sessão:', error);
+        
+        // If there's a session error, clear all auth data and storage
+        if (error.message?.includes('refresh_token_not_found') || error.message?.includes('invalid')) {
+          console.log('🧹 Limpando tokens corrompidos...');
+          await supabase.auth.signOut();
+          localStorage.clear();
+        }
+        
         setLoading(false);
         return;
       }
       
       console.log('Sessão inicial:', session?.user?.email || 'Nenhuma sessão');
-      setSession(session);
-      setUser(session?.user ?? null);
       
       if (session?.user) {
-        await fetchProfile(session.user.id);
-        setLoading(false);
+        setSession(session);
+        setUser(session.user);
         
-        console.log('Verificando assinatura para sessão existente...');
-        setTimeout(() => {
-          if (!isCheckingSubscription) {
-            checkSubscription();
-          }
-        }, 2000);
+        try {
+          await fetchProfile(session.user.id);
+          setLoading(false);
+          
+          console.log('Verificando assinatura para sessão existente...');
+          setTimeout(() => {
+            if (!isCheckingSubscription) {
+              checkSubscription();
+            }
+          }, 2000);
+        } catch (error) {
+          console.error('❌ Erro inicial ao buscar profile:', error);
+          setLoading(false);
+        }
       } else {
+        setSession(null);
+        setUser(null);
         setLoading(false);
       }
     });
