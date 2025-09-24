@@ -12,7 +12,8 @@ const ConnectivityOverlay = () => {
     isSupabaseConnected, 
     isReconnecting, 
     lastError, 
-    reconnect 
+    reconnect,
+    clearCache
   } = useSupabaseConnectivity();
 
   const isLandingPage = location.pathname === '/';
@@ -79,16 +80,27 @@ const ConnectivityOverlay = () => {
                 <span>Tentando reconectar...</span>
               </div>
             ) : (
-              <Button 
-                onClick={reconnect}
-                variant="outline" 
-                size="sm"
-                className="w-full"
-                disabled={!isOnline}
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Tentar Reconectar
-              </Button>
+              <div className="space-y-2">
+                <Button 
+                  onClick={reconnect}
+                  variant="outline" 
+                  size="sm"
+                  className="w-full"
+                  disabled={!isOnline}
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Tentar Reconectar
+                </Button>
+                <Button 
+                  onClick={clearCache}
+                  variant="destructive" 
+                  size="sm"
+                  className="w-full"
+                >
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Limpar Cache
+                </Button>
+              </div>
             )}
 
             <div className="text-xs text-center text-muted-foreground">

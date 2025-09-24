@@ -4,6 +4,7 @@ import NavigationIsland from "@/components/NavigationIsland";
 import MobileNavigation from "@/components/MobileNavigation";
 import UserMenu from "@/components/UserMenu";
 import TrialNotification from "@/components/TrialNotification";
+import { CalendarioFinanceiro } from "@/components/CalendarioFinanceiro";
 import { useAuth } from "@/hooks/useAuth";
 import { useDespesas } from "@/hooks/useDespesas";
 import { useReceitas } from "@/hooks/useReceitas";
@@ -184,6 +185,9 @@ const Dashboard = () => {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4 hidden md:block">📊 Dashboard Financeiro</h1>
           <p className="text-muted-foreground">Análise completa das suas finanças</p>
+          <div className="mt-4">
+            <CalendarioFinanceiro />
+          </div>
         </div>
         
         {/* Cards de Resumo Principal */}

@@ -19,6 +19,27 @@ export const useSupabaseConnectivity = () => {
   // Track connection attempts to prevent multiple simultaneous tests
   const [isTestingConnection, setIsTestingConnection] = useState(false);
 
+  // Force clear storage when connectivity fails
+  const clearStorageAndRetry = () => {
+    console.log('🧹 Limpando cache e localStorage...');
+    // Clear Supabase auth cache
+    localStorage.removeItem('supabase.auth.token');
+    localStorage.removeItem('sb-ncjcsfnvyungxfmqszpz-auth-token');
+    
+    // Clear other potential cache keys
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.includes('supabase') || key.includes('auth')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    // Force page reload after clearing cache
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
+
   // Test Supabase connectivity with concurrency control
   const testSupabaseConnection = async () => {
     // Prevent multiple simultaneous connection tests
@@ -37,13 +58,21 @@ export const useSupabaseConnectivity = () => {
       const timeoutId = setTimeout(() => controller.abort(), 5000);
 
       // Test connectivity using a simple operation that always works
-      const { error } = await supabase.auth.getSession();
+      const { error, data } = await supabase.auth.getSession();
 
       clearTimeout(timeoutId);
       
-      if (error) {
-        const errorMessage = error.message || 'Erro de conectividade com o banco';
+      // Check if we have a valid session and not an empty or error response
+      if (error || !data) {
+        const errorMessage = error?.message || 'Erro de conectividade com o banco';
         console.error('❌ Erro de conectividade Supabase:', errorMessage);
+        
+        // If we have auth-related errors or storage issues, clear cache
+        if (error?.message?.includes('session') || error?.message?.includes('invalid') || error?.message?.includes('expired')) {
+          console.log('🧹 Erro de sessão detectado, limpando cache...');
+          clearStorageAndRetry();
+          return false;
+        }
         
         setState(prev => ({
           ...prev,
@@ -160,6 +189,7 @@ export const useSupabaseConnectivity = () => {
   return {
     ...state,
     testConnection: testSupabaseConnection,
-    reconnect: attemptReconnection
+    reconnect: attemptReconnection,
+    clearCache: clearStorageAndRetry
   };
 };
