@@ -259,11 +259,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         console.log('Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
-        setLoading(false);
         
         if (session?.user) {
-          // Fetch profile first
+          // Fetch profile first before setting loading to false
           await fetchProfile(session.user.id);
+          setLoading(false);
           
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
             console.log('Verificando assinatura automaticamente...');
@@ -274,6 +274,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               }
             }, 3000); // Increased delay to ensure stability
           }
+        } else {
+          setLoading(false);
         }
         
         // Clear data when user signs out
@@ -299,10 +301,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.log('Sessão inicial:', session?.user?.email || 'Nenhuma sessão');
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
       
       if (session?.user) {
         await fetchProfile(session.user.id);
+        setLoading(false);
         
         console.log('Verificando assinatura para sessão existente...');
         setTimeout(() => {
@@ -310,6 +312,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             checkSubscription();
           }
         }, 2000);
+      } else {
+        setLoading(false);
       }
     });
 

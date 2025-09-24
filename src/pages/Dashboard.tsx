@@ -185,7 +185,7 @@ const Dashboard = () => {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-foreground mb-4 hidden md:block">📊 Dashboard Financeiro</h1>
           <p className="text-muted-foreground">Análise completa das suas finanças</p>
-          <div className="mt-4">
+          <div className="mt-4 flex justify-center">
             <CalendarioFinanceiro />
           </div>
         </div>
