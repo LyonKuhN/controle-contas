@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -77,8 +76,18 @@ const Auth = () => {
   useEffect(() => {
     if (user) {
       navigate('/dashboard');
+    } else {
+      // Se não houver usuário após refresh, mostrar alerta e garantir que está na tela de login
+      if (window.location.pathname !== '/auth') {
+        toast({
+          title: 'Sessão expirada',
+          description: 'Sua sessão expirou ou foi perdida. Por favor, faça login novamente.',
+          variant: 'destructive'
+        });
+        navigate('/auth?mode=login');
+      }
     }
-  }, [user, navigate]);
+  }, [user, navigate, toast]);
 
   const validateEmail = (): boolean => {
     if (!email) {
